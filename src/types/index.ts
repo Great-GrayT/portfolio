@@ -32,6 +32,7 @@ export interface Education {
   gpa?: string;
   ranking?: string;
   graduationDate?: string;
+  description?: string;
 }
 
 export interface Certification {
@@ -48,9 +49,33 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  fullDescription: string;
   technologies: string[];
-  impact?: string;
+  languages: string[];
   category: "automation" | "analysis" | "modeling" | "development";
+  industry: string;
+  image: string;
+  files: ProjectFile[];
+  socialLinks: {
+    github?: string;
+    linkedin?: string;
+    website?: string;
+  };
+  impact?: string;
+  status: "completed" | "ongoing" | "archived";
+  duration?: string;
+  teamSize?: number;
+}
+
+export interface ProjectFile {
+  id: string;
+  type: "pdf" | "excel" | "word" | "powerpoint" | "other";
+  language: "English" | "Farsi" | "Arabic" | "Spanish" | "French";
+  version: string;
+  lastUpdated: string;
+  filePath: string;
+  fileName: string;
+  fileSize?: string;
 }
 
 export interface Skill {

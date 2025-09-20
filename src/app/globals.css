@@ -76,6 +76,27 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Portfolio Section Variables */
+  --portfolio-card-blur: 20px;
+  --portfolio-card-shadow: oklch(0 0 0 / 8%);
+  --portfolio-card-shadow-hover: oklch(0 0 0 / 20%);
+  --portfolio-card-border: oklch(0.929 0.013 255.508 / 20%);
+  --portfolio-gradient-overlay: oklch(0 0 0 / 40%);
+
+  /* Industry Color Variables */
+  --industry-telecom: oklch(0.6 0.2 240);
+  --industry-telecom-dark: oklch(0.5 0.25 240);
+  --industry-asset: oklch(0.6 0.2 150);
+  --industry-asset-dark: oklch(0.5 0.25 150);
+  --industry-finance: oklch(0.6 0.2 270);
+  --industry-finance-dark: oklch(0.5 0.25 270);
+  --industry-pharma: oklch(0.6 0.2 30);
+  --industry-pharma-dark: oklch(0.5 0.25 30);
+  --industry-realestate: oklch(0.6 0.2 60);
+  --industry-realestate-dark: oklch(0.5 0.25 60);
+  --industry-crypto: oklch(0.7 0.2 80);
+  --industry-crypto-dark: oklch(0.6 0.25 80);
 }
 
 .dark {
@@ -110,6 +131,12 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+
+  /* Portfolio Section Variables - Dark Mode */
+  --portfolio-card-shadow: oklch(0 0 0 / 25%);
+  --portfolio-card-shadow-hover: oklch(0 0 0 / 40%);
+  --portfolio-card-border: oklch(1 0 0 / 15%);
+  --portfolio-gradient-overlay: oklch(0 0 0 / 60%);
 }
 
 @layer base {
@@ -129,6 +156,110 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Portfolio Section Custom Styles */
+@layer components {
+  .portfolio-card {
+    backdrop-filter: blur(var(--portfolio-card-blur));
+    -webkit-backdrop-filter: blur(var(--portfolio-card-blur));
+    box-shadow: 0 8px 32px var(--portfolio-card-shadow);
+    border: 1px solid var(--portfolio-card-border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .portfolio-card:hover {
+    box-shadow: 0 20px 48px var(--portfolio-card-shadow-hover);
+    border-color: var(--primary);
+  }
+
+  .portfolio-industry-telecom {
+    background: linear-gradient(
+      135deg,
+      var(--industry-telecom),
+      var(--industry-telecom-dark)
+    );
+  }
+
+  .portfolio-industry-asset {
+    background: linear-gradient(
+      135deg,
+      var(--industry-asset),
+      var(--industry-asset-dark)
+    );
+  }
+
+  .portfolio-industry-finance {
+    background: linear-gradient(
+      135deg,
+      var(--industry-finance),
+      var(--industry-finance-dark)
+    );
+  }
+
+  .portfolio-industry-pharma {
+    background: linear-gradient(
+      135deg,
+      var(--industry-pharma),
+      var(--industry-pharma-dark)
+    );
+  }
+
+  .portfolio-industry-realestate {
+    background: linear-gradient(
+      135deg,
+      var(--industry-realestate),
+      var(--industry-realestate-dark)
+    );
+  }
+
+  .portfolio-industry-crypto {
+    background: linear-gradient(
+      135deg,
+      var(--industry-crypto),
+      var(--industry-crypto-dark)
+    );
+  }
+
+  .portfolio-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      oklch(1 0 0 / 10%) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: portfolio-shimmer 2s infinite;
+  }
+
+  .dark .portfolio-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      oklch(1 0 0 / 5%) 50%,
+      transparent 100%
+    );
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .portfolio-shadow-glow {
+    box-shadow: 0 0 0 1px var(--ring),
+      0 10px 25px var(--portfolio-card-shadow-hover);
+  }
+}
+
+@keyframes portfolio-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 

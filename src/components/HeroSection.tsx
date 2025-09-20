@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Linkedin, ExternalLink } from "lucide-react";
@@ -7,6 +8,13 @@ import { personalData } from "@/lib/data";
 import { motion } from "framer-motion";
 
 export default function HeroSection() {
+  const [imageError, setImageError] = useState(false);
+  const [logoErrors, setLogoErrors] = useState(new Set());
+
+  const handleLogoError = (logoId) => {
+    setLogoErrors((prev) => new Set([...prev, logoId]));
+  };
+
   const handleContactClick = (type: "email" | "phone" | "linkedin") => {
     switch (type) {
       case "email":
@@ -200,19 +208,41 @@ export default function HeroSection() {
             className="flex justify-center lg:justify-end"
           >
             <div className="relative">
-              {/* Professional Photo Placeholder */}
-              <div className="w-80 h-80 bg-gradient-to-br from-primary/20 to-blue-600/20 rounded-full flex items-center justify-center border-4 border-primary/10 shadow-2xl">
-                <div className="w-64 h-64 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-full flex items-center justify-center">
-                  <div className="text-4xl font-bold text-muted-foreground">
-                    {personalData.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
+              {/* Professional Photo */}
+              <div className="w-80 h-80 bg-gradient-to-br from-primary/20 to-blue-600/20 rounded-full flex items-center justify-center border-4 border-primary/10 shadow-2xl overflow-hidden">
+                <div className="w-64 h-64 rounded-full overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
+                  {!imageError ? (
+                    <img
+                      src="/images/reza-profile.jpg"
+                      alt={`${personalData.name} - Professional Photo`}
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      onError={() => {
+                        console.log(
+                          "Profile image failed to load, showing initials fallback"
+                        );
+                        setImageError(true);
+                      }}
+                      onLoad={() => {
+                        console.log("Profile image loaded successfully");
+                      }}
+                      loading="eager"
+                    />
+                  ) : (
+                    <div className="text-4xl font-bold text-muted-foreground">
+                      {personalData.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Floating Elements */}
+              {/* Decorative background elements */}
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/10 rounded-full blur-xl"></div>
+              <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-blue-600/10 rounded-full blur-xl"></div>
+
+              {/* Floating Achievement Badges - Clean Logo + Text */}
               <motion.div
                 animate={{ y: [-10, 10, -10] }}
                 transition={{
@@ -220,9 +250,23 @@ export default function HeroSection() {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="absolute -top-4 -right-4 bg-primary text-primary-foreground px-3 py-2 rounded-full text-sm font-medium shadow-lg"
+                className="absolute -top-6 -right-6 flex flex-col items-center gap-2"
               >
-                CFA Level 1
+                {!logoErrors.has("cfa") ? (
+                  <img
+                    src="/images/certifications/cfa-logo.png"
+                    alt="CFA Institute Logo"
+                    className="w-12 h-12 object-contain drop-shadow-lg"
+                    onError={() => handleLogoError("cfa")}
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-xl font-bold text-white">C</span>
+                  </div>
+                )}
+                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
+                  CFA Level 1
+                </span>
               </motion.div>
 
               <motion.div
@@ -233,9 +277,23 @@ export default function HeroSection() {
                   ease: "easeInOut",
                   delay: 1,
                 }}
-                className="absolute -bottom-4 -left-4 bg-blue-600 text-white px-3 py-2 rounded-full text-sm font-medium shadow-lg"
+                className="absolute -bottom-6 -left-6 flex flex-col items-center gap-2"
               >
-                Bloomberg Certified
+                {!logoErrors.has("bloomberg") ? (
+                  <img
+                    src="/images/certifications/bloomberg-logo.jpg"
+                    alt="Bloomberg Logo"
+                    className="w-12 h-12 object-contain drop-shadow-lg"
+                    onError={() => handleLogoError("bloomberg")}
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-xl font-bold text-white">B</span>
+                  </div>
+                )}
+                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
+                  Bloomberg Certified
+                </span>
               </motion.div>
 
               <motion.div
@@ -246,9 +304,53 @@ export default function HeroSection() {
                   ease: "easeInOut",
                   delay: 2,
                 }}
-                className="absolute top-1/2 -left-8 bg-green-600 text-white px-3 py-2 rounded-full text-sm font-medium shadow-lg"
+                className="absolute top-1/3 -left-10 flex flex-col items-center gap-2 transform -translate-y-1/2"
               >
-                M.Sc. Finance
+                {!logoErrors.has("msc") ? (
+                  <img
+                    src="/images/certifications/msc-finance-logo.png"
+                    alt="University Logo"
+                    className="w-12 h-12 object-contain drop-shadow-lg"
+                    onError={() => handleLogoError("msc")}
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-xl font-bold text-white">M</span>
+                  </div>
+                )}
+                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
+                  M.Sc. Finance
+                </span>
+              </motion.div>
+
+              <motion.div
+                animate={{
+                  rotate: [-2, 2, -2],
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 3,
+                }}
+                className="absolute bottom-4 -right-12 flex flex-col items-center gap-2"
+              >
+                {!logoErrors.has("gre") ? (
+                  <img
+                    src="/images/certifications/gre-logo.png"
+                    alt="GRE Logo"
+                    className="w-12 h-12 object-contain drop-shadow-lg"
+                    onError={() => handleLogoError("gre")}
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-xl font-bold text-white">G</span>
+                  </div>
+                )}
+                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
+                  GRE
+                </span>
               </motion.div>
             </div>
           </motion.div>

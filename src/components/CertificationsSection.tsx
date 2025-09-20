@@ -1,11 +1,11 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { certifications } from "@/lib/data";
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
-import { useRef } from "react";
 import {
   Award,
   Calendar,
@@ -19,6 +19,12 @@ import {
 export default function CertificationsSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const [logoErrors, setLogoErrors] = useState(new Set());
+
+  const handleLogoError = (logoId) => {
+    console.log(`Logo failed for: ${logoId}`);
+    setLogoErrors((prev) => new Set([...prev, logoId]));
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -61,18 +67,121 @@ export default function CertificationsSection() {
     }
   };
 
-  const getIssuerIcon = (issuer: string) => {
-    if (issuer.toLowerCase().includes("bloomberg")) {
-      return "📊";
-    } else if (issuer.toLowerCase().includes("cfa")) {
-      return "🏆";
+  // Get logo for issuer with fallback
+  const getIssuerLogo = (issuer: string, certification: any) => {
+    const issuerLower = issuer.toLowerCase();
+    let logoPath = "";
+    let fallbackIcon = "🎓";
+    let fallbackBg = "bg-gray-500";
+
+    if (issuerLower.includes("bloomberg")) {
+      logoPath = "/images/certifications/bloomberg-logo.jpg";
+      fallbackIcon = "📊";
+      fallbackBg = "bg-blue-600";
+    } else if (issuerLower.includes("cfa")) {
+      logoPath = "/images/certifications/cfa-logo.png";
+      fallbackIcon = "🏆";
+      fallbackBg = "bg-primary";
+    } else if (issuerLower.includes("morgan")) {
+      logoPath = "/images/certifications/amplifymeofficial_logo.jpeg";
+      fallbackIcon = "🏛️";
+      fallbackBg = "bg-blue-800";
+    } else if (issuerLower.includes("ubs")) {
+      logoPath = "/images/certifications/amplifymeofficial_logo.jpeg";
+      fallbackIcon = "🏛️";
+      fallbackBg = "bg-red-600";
+    } else if (issuerLower.includes("gre") || issuerLower.includes("ets")) {
+      logoPath = "/images/certifications/gre-logo.png";
+      fallbackIcon = "📝";
+      fallbackBg = "bg-purple-600";
     } else if (
-      issuer.toLowerCase().includes("morgan") ||
-      issuer.toLowerCase().includes("ubs")
+      issuerLower.includes("university") ||
+      issuerLower.includes("college")
     ) {
-      return "🏛️";
+      logoPath = "/images/certifications/msc-finance-logo.png";
+      fallbackIcon = "🎓";
+      fallbackBg = "bg-green-600";
     }
-    return "🎓";
+
+    const logoId = `${certification.id}-logo`;
+
+    if (logoErrors.has(logoId) || !logoPath) {
+      return (
+        <div
+          className={`w-12 h-12 ${fallbackBg} rounded-lg flex items-center justify-center shadow-md`}
+        >
+          <span className="text-xl">{fallbackIcon}</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-md p-1">
+        <img
+          src={logoPath}
+          alt={`${issuer} Logo`}
+          className="w-full h-full object-contain"
+          onError={() => handleLogoError(logoId)}
+          loading="lazy"
+        />
+      </div>
+    );
+  };
+
+  // Get provider logo for the bottom section
+  const getProviderLogo = (
+    provider: string,
+    size: "large" | "small" = "large"
+  ) => {
+    const providerLower = provider.toLowerCase();
+    let logoPath = "";
+    let fallbackIcon = "🎓";
+    let fallbackBg = "bg-gray-500";
+
+    if (providerLower.includes("bloomberg")) {
+      logoPath = "/images/certifications/bloomberg-logo.jpg";
+      fallbackIcon = "📊";
+      fallbackBg = "bg-blue-600";
+    } else if (providerLower.includes("cfa")) {
+      logoPath = "/images/certifications/cfa-logo.png";
+      fallbackIcon = "🏆";
+      fallbackBg = "bg-primary";
+    } else if (
+      providerLower.includes("investment") ||
+      providerLower.includes("banks")
+    ) {
+      logoPath = "/images/certifications/amplifymeofficial_logo.jpeg";
+      fallbackIcon = "🏛️";
+      fallbackBg = "bg-purple-600";
+    }
+
+    const logoId = `provider-${provider.replace(/\s+/g, "-").toLowerCase()}`;
+    const logoSize = size === "large" ? "w-16 h-16" : "w-8 h-8";
+    const iconSize = size === "large" ? "text-3xl" : "text-xl";
+
+    if (logoErrors.has(logoId) || !logoPath) {
+      return (
+        <div
+          className={`${logoSize} ${fallbackBg} rounded-lg flex items-center justify-center shadow-lg`}
+        >
+          <span className={iconSize}>{fallbackIcon}</span>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={`${logoSize} bg-white rounded-lg flex items-center justify-center shadow-lg p-2`}
+      >
+        <img
+          src={logoPath}
+          alt={`${provider} Logo`}
+          className="w-full h-full object-contain"
+          onError={() => handleLogoError(logoId)}
+          loading="lazy"
+        />
+      </div>
+    );
   };
 
   const completedCertifications = certifications.filter(
@@ -122,9 +231,7 @@ export default function CertificationsSection() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="text-2xl">
-                            {getIssuerIcon(certification.issuer)}
-                          </div>
+                          {getIssuerLogo(certification.issuer, certification)}
                           <Badge
                             variant={getStatusBadgeVariant(
                               certification.status
@@ -273,7 +380,9 @@ export default function CertificationsSection() {
                   transition={{ duration: 0.4, delay: 1.2 }}
                   className="text-center p-6 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800"
                 >
-                  <div className="text-4xl mb-4">📊</div>
+                  <div className="flex justify-center mb-4">
+                    {getProviderLogo("Bloomberg")}
+                  </div>
                   <h4 className="font-semibold text-foreground mb-2">
                     Bloomberg
                   </h4>
@@ -301,7 +410,9 @@ export default function CertificationsSection() {
                   transition={{ duration: 0.4, delay: 1.3 }}
                   className="text-center p-6 rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800"
                 >
-                  <div className="text-4xl mb-4">🏆</div>
+                  <div className="flex justify-center mb-4">
+                    {getProviderLogo("CFA Institute")}
+                  </div>
                   <h4 className="font-semibold text-foreground mb-2">
                     CFA Institute
                   </h4>
@@ -322,7 +433,9 @@ export default function CertificationsSection() {
                   transition={{ duration: 0.4, delay: 1.4 }}
                   className="text-center p-6 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800"
                 >
-                  <div className="text-4xl mb-4">🏛️</div>
+                  <div className="flex justify-center mb-4">
+                    {getProviderLogo("Investment Banks")}
+                  </div>
                   <h4 className="font-semibold text-foreground mb-2">
                     Investment Banks
                   </h4>
