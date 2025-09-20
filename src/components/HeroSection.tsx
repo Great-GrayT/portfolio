@@ -11,7 +11,7 @@ export default function HeroSection() {
   const [imageError, setImageError] = useState(false);
   const [logoErrors, setLogoErrors] = useState(new Set());
 
-  const handleLogoError = (logoId) => {
+  const handleLogoError = (logoId: string) => {
     setLogoErrors((prev) => new Set([...prev, logoId]));
   };
 

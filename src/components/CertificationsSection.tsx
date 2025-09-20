@@ -21,9 +21,9 @@ export default function CertificationsSection() {
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const [logoErrors, setLogoErrors] = useState(new Set());
 
-  const handleLogoError = (logoId) => {
+  const handleLogoError = (logoId: string) => {
     console.log(`Logo failed for: ${logoId}`);
-    setLogoErrors((prev) => new Set([...prev, logoId]));
+    setLogoErrors((prev: any) => new Set([...prev, logoId]));
   };
 
   const getStatusIcon = (status: string) => {

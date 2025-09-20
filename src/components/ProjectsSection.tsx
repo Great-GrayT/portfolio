@@ -46,9 +46,8 @@ export default function ProjectsSection() {
   const [imageErrors, setImageErrors] = useState(new Set());
   const [downloadErrors, setDownloadErrors] = useState({});
   const [showFileSelector, setShowFileSelector] = useState(false);
-  const [selectedFileType, setSelectedFileType] = useState("");
 
-  const getCategoryIcon = (category) => {
+  const getCategoryIcon = (category: string) => {
     switch (category) {
       case "automation":
         return Zap;
@@ -63,7 +62,7 @@ export default function ProjectsSection() {
     }
   };
 
-  const getCategoryColor = (category) => {
+  const getCategoryColor = (category: string) => {
     switch (category) {
       case "automation":
         return "bg-blue-500";
@@ -78,7 +77,7 @@ export default function ProjectsSection() {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
         return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200";
