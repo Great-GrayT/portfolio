@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { projects } from "@/lib/data";
@@ -34,6 +35,46 @@ import {
 
 const PROJECTS_PER_PAGE = 6;
 
+// Define proper types
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  fullDescription?: string;
+  image: string;
+  category: string;
+  industry: string;
+  status: string;
+  technologies: string[];
+  languages: string[];
+  duration?: string;
+  teamSize?: number;
+  impact?: string;
+  socialLinks?: {
+    github?: string;
+    linkedin?: string;
+    website?: string;
+  };
+  files?: ProjectFile[];
+}
+
+interface ProjectFile {
+  id: string;
+  fileName: string;
+  filePath: string;
+  type: string;
+  language: string;
+  version: string;
+  fileSize?: string;
+  lastUpdated: string;
+}
+
+interface IndustryColors {
+  cssClass: string;
+  text: string;
+  icon: string;
+}
+
 export default function ProjectsSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
@@ -41,10 +82,12 @@ export default function ProjectsSection() {
   const [selectedIndustry, setSelectedIndustry] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   // Track which images failed to load
-  const [imageErrors, setImageErrors] = useState(new Set());
-  const [downloadErrors, setDownloadErrors] = useState({});
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>(
+    {}
+  );
   const [showFileSelector, setShowFileSelector] = useState(false);
 
   const getCategoryIcon = (category: string) => {
@@ -91,8 +134,8 @@ export default function ProjectsSection() {
   };
 
   // Industry-specific color schemes with fallback Tailwind classes
-  const getIndustryColors = (industry) => {
-    const industryColors = {
+  const getIndustryColors = (industry: string): IndustryColors => {
+    const industryColors: Record<string, IndustryColors> = {
       Telecommunications: {
         cssClass: "bg-gradient-to-br from-blue-600 to-cyan-600",
         text: "text-white",
@@ -133,7 +176,7 @@ export default function ProjectsSection() {
     );
   };
 
-  const getFileTypeIcon = (fileType) => {
+  const getFileTypeIcon = (fileType: string) => {
     switch (fileType) {
       case "pdf":
         return FileText;
@@ -150,7 +193,7 @@ export default function ProjectsSection() {
     }
   };
 
-  const getFileTypeColor = (fileType) => {
+  const getFileTypeColor = (fileType: string) => {
     switch (fileType) {
       case "pdf":
         return "text-red-600";
@@ -167,7 +210,7 @@ export default function ProjectsSection() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -177,7 +220,7 @@ export default function ProjectsSection() {
   };
 
   // Create fallback image with project title and industry colors
-  const createFallbackImage = (project) => {
+  const createFallbackImage = (project: Project) => {
     const colors = getIndustryColors(project.industry);
 
     return (
@@ -205,12 +248,12 @@ export default function ProjectsSection() {
     );
   };
 
-  const handleImageError = (projectId) => {
+  const handleImageError = (projectId: string) => {
     console.log(`Image failed for project ${projectId}`);
     setImageErrors((prev) => new Set([...prev, projectId]));
   };
 
-  const handleImageLoad = (projectId) => {
+  const handleImageLoad = (projectId: string) => {
     console.log(`Image loaded successfully for project ${projectId}`);
     setImageErrors((prev) => {
       const newSet = new Set(prev);
@@ -219,7 +262,7 @@ export default function ProjectsSection() {
     });
   };
 
-  const handleDownload = async (file, projectId) => {
+  const handleDownload = async (file: ProjectFile, projectId: string) => {
     if (!file || !file.filePath) {
       setDownloadErrors((prev) => ({
         ...prev,
@@ -319,7 +362,7 @@ export default function ProjectsSection() {
   const openFileSelector = () => setShowFileSelector(true);
   const closeFileSelector = () => setShowFileSelector(false);
 
-  const openProjectModal = (project) => {
+  const openProjectModal = (project: Project) => {
     setSelectedProject(project);
     setDownloadErrors({});
     setShowFileSelector(false);
@@ -445,9 +488,11 @@ export default function ProjectsSection() {
                             {createFallbackImage(project)}
                           </div>
                         ) : (
-                          <img
+                          <Image
                             src={project.image}
                             alt={project.name}
+                            width={400}
+                            height={192}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             onError={() => handleImageError(project.id)}
                             onLoad={() => handleImageLoad(project.id)}
@@ -641,9 +686,11 @@ export default function ProjectsSection() {
                     {createFallbackImage(selectedProject)}
                   </div>
                 ) : (
-                  <img
+                  <Image
                     src={selectedProject.image}
                     alt={selectedProject.name}
+                    width={1024}
+                    height={256}
                     className="w-full h-64 object-cover rounded-t-2xl"
                     onError={() => handleImageError(selectedProject.id)}
                     loading="lazy"
