@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { certifications } from "@/lib/data";
@@ -16,14 +17,25 @@ import {
   Target,
 } from "lucide-react";
 
+// Define proper types
+interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  status: "completed" | "in-progress" | "scheduled";
+  issueDate?: string;
+  scheduledDate?: string;
+  credentialId?: string;
+}
+
 export default function CertificationsSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
-  const [logoErrors, setLogoErrors] = useState(new Set());
+  const [logoErrors, setLogoErrors] = useState<Set<string>>(new Set());
 
   const handleLogoError = (logoId: string) => {
     console.log(`Logo failed for: ${logoId}`);
-    setLogoErrors((prev: any) => new Set([...prev, logoId]));
+    setLogoErrors((prev: Set<string>) => new Set([...prev, logoId]));
   };
 
   const getStatusIcon = (status: string) => {
@@ -68,7 +80,7 @@ export default function CertificationsSection() {
   };
 
   // Get logo for issuer with fallback
-  const getIssuerLogo = (issuer: string, certification: any) => {
+  const getIssuerLogo = (issuer: string, certification: Certification) => {
     const issuerLower = issuer.toLowerCase();
     let logoPath = "";
     let fallbackIcon = "🎓";
@@ -117,9 +129,11 @@ export default function CertificationsSection() {
 
     return (
       <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-md p-1">
-        <img
+        <Image
           src={logoPath}
           alt={`${issuer} Logo`}
+          width={48}
+          height={48}
           className="w-full h-full object-contain"
           onError={() => handleLogoError(logoId)}
           loading="lazy"
@@ -157,6 +171,7 @@ export default function CertificationsSection() {
 
     const logoId = `provider-${provider.replace(/\s+/g, "-").toLowerCase()}`;
     const logoSize = size === "large" ? "w-16 h-16" : "w-8 h-8";
+    const imageDimensions = size === "large" ? 64 : 32;
     const iconSize = size === "large" ? "text-3xl" : "text-xl";
 
     if (logoErrors.has(logoId) || !logoPath) {
@@ -173,9 +188,11 @@ export default function CertificationsSection() {
       <div
         className={`${logoSize} bg-white rounded-lg flex items-center justify-center shadow-lg p-2`}
       >
-        <img
+        <Image
           src={logoPath}
           alt={`${provider} Logo`}
+          width={imageDimensions}
+          height={imageDimensions}
           className="w-full h-full object-contain"
           onError={() => handleLogoError(logoId)}
           loading="lazy"

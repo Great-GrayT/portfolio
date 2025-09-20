@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Linkedin, ExternalLink } from "lucide-react";
@@ -9,7 +10,7 @@ import { motion } from "framer-motion";
 
 export default function HeroSection() {
   const [imageError, setImageError] = useState(false);
-  const [logoErrors, setLogoErrors] = useState(new Set());
+  const [logoErrors, setLogoErrors] = useState<Set<string>>(new Set());
 
   const handleLogoError = (logoId: string) => {
     setLogoErrors((prev) => new Set([...prev, logoId]));
@@ -212,9 +213,11 @@ export default function HeroSection() {
               <div className="w-80 h-80 bg-gradient-to-br from-primary/20 to-blue-600/20 rounded-full flex items-center justify-center border-4 border-primary/10 shadow-2xl overflow-hidden">
                 <div className="w-64 h-64 rounded-full overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
                   {!imageError ? (
-                    <img
+                    <Image
                       src="/images/reza-profile.jpg"
                       alt={`${personalData.name} - Professional Photo`}
+                      width={256}
+                      height={256}
                       className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       onError={() => {
                         console.log(
@@ -225,7 +228,7 @@ export default function HeroSection() {
                       onLoad={() => {
                         console.log("Profile image loaded successfully");
                       }}
-                      loading="eager"
+                      priority
                     />
                   ) : (
                     <div className="text-4xl font-bold text-muted-foreground">
@@ -253,9 +256,11 @@ export default function HeroSection() {
                 className="absolute -top-6 -right-6 flex flex-col items-center gap-2"
               >
                 {!logoErrors.has("cfa") ? (
-                  <img
+                  <Image
                     src="/images/certifications/cfa-logo.png"
                     alt="CFA Institute Logo"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 object-contain drop-shadow-lg"
                     onError={() => handleLogoError("cfa")}
                   />
@@ -280,9 +285,11 @@ export default function HeroSection() {
                 className="absolute -bottom-6 -left-6 flex flex-col items-center gap-2"
               >
                 {!logoErrors.has("bloomberg") ? (
-                  <img
+                  <Image
                     src="/images/certifications/bloomberg-logo.jpg"
                     alt="Bloomberg Logo"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 object-contain drop-shadow-lg"
                     onError={() => handleLogoError("bloomberg")}
                   />
@@ -307,9 +314,11 @@ export default function HeroSection() {
                 className="absolute top-1/3 -left-10 flex flex-col items-center gap-2 transform -translate-y-1/2"
               >
                 {!logoErrors.has("msc") ? (
-                  <img
+                  <Image
                     src="/images/certifications/msc-finance-logo.png"
                     alt="University Logo"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 object-contain drop-shadow-lg"
                     onError={() => handleLogoError("msc")}
                   />
@@ -337,9 +346,11 @@ export default function HeroSection() {
                 className="absolute bottom-4 -right-12 flex flex-col items-center gap-2"
               >
                 {!logoErrors.has("gre") ? (
-                  <img
+                  <Image
                     src="/images/certifications/gre-logo.png"
                     alt="GRE Logo"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 object-contain drop-shadow-lg"
                     onError={() => handleLogoError("gre")}
                   />
