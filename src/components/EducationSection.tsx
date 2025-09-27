@@ -32,12 +32,31 @@ export default function EducationSection() {
   };
 
   const getEducationPriority = (degree: string) => {
-    if (degree.includes("M.Sc.")) return 1;
-    if (degree.includes("B.Sc.")) return 2;
-    if (degree.includes("Minor")) return 3;
-    return 4;
+    // Match your actual data structure
+    if (
+      degree.includes("Master of Science") ||
+      degree.includes("Master") ||
+      degree.includes("M.Sc.")
+    ) {
+      return 1; // Highest priority
+    }
+    if (
+      degree.includes("Bachelor of Science") ||
+      degree.includes("Bachelor") ||
+      degree.includes("B.Sc.")
+    ) {
+      return 2; // Second priority
+    }
+    if (degree.includes("Minor Course") || degree.includes("Minor")) {
+      return 3; // Third priority (supplementary education)
+    }
+    if (degree.includes("High School") || degree.includes("High school")) {
+      return 4; // Lowest priority
+    }
+    return 5; // Default fallback
   };
 
+  // Your existing sorting logic remains the same:
   const sortedEducation = [...education].sort(
     (a, b) => getEducationPriority(a.degree) - getEducationPriority(b.degree)
   );

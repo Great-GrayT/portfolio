@@ -52,7 +52,7 @@ export interface Project {
   fullDescription: string;
   technologies: string[];
   languages: string[];
-  category: "automation" | "analysis" | "modeling" | "development";
+  category: "automation" | "analysis" | "modeling" | "development" | "finTech";
   industry: string;
   image: string;
   files: ProjectFile[];
