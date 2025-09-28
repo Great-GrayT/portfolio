@@ -4,7 +4,7 @@ import { personalData } from "@/lib/data";
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { Mail, Phone, Linkedin, ArrowUp, Heart } from "lucide-react";
+import { Mail, Phone, Linkedin, ArrowUp } from "lucide-react";
 
 export default function Footer() {
   const ref = useRef(null);
