@@ -163,10 +163,10 @@ export default function Footer() {
         >
           <div className="flex items-center space-x-2 text-slate-300 mb-4 md:mb-0">
             <span>
-              © {new Date().getFullYear()} {personalData.name}. Made with
+              © {new Date().getFullYear()} {personalData.name}. All rights
+              reserved.
             </span>
-            <Heart className="h-4 w-4 text-red-500" />
-            <span>using Next.js & shadcn/ui</span>
+            <span>Made using Next.js & shadcn/ui</span>
           </div>
 
           <motion.button

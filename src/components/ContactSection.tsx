@@ -53,15 +53,23 @@ export default function ContactSection() {
     setSubmitStatus("idle");
 
     try {
-      // Simulate form submission
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Send email using our API route
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-      // In a real application, you would send the data to your backend
-      console.log("Form submitted:", data);
-
-      setSubmitStatus("success");
-      reset();
-    } catch {
+      if (response.ok) {
+        setSubmitStatus("success");
+        reset(); // Clear the form
+      } else {
+        setSubmitStatus("error");
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);

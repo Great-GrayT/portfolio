@@ -344,7 +344,7 @@ export const projects: Project[] = [
     impact:
       "Provided strategic insights that influenced $2B+ investment decisions",
     status: "completed",
-    duration: "6 months",
+    duration: "1 months",
     teamSize: 4,
   },
   {
