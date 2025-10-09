@@ -18,16 +18,17 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-export function EducationSection() {
+export default function EducationSection() {
   const education = [
     {
       degree: "M.Sc. in Finance",
       institution: "Manchester Metropolitan",
       location: "Manchester, UK",
       date: "2024 – 2025",
-      description: "Expected graduation date: September 2025",
+      description: "Grade: first Class (1:1)",
       icon: <GraduationCap className="h-5 w-5" />,
-      additional: "Rank 51+ in World, QS Universities",
+      additional:
+        "Grade: first Class (1:1) - Rank 51+ in World, QS Universities",
     },
     {
       degree: "B.Sc. in Biomedical Engineering (Bioelectric)",
@@ -60,45 +61,57 @@ export function EducationSection() {
 
   const certifications = [
     {
-      name: "Bloomberg Market Concepts",
-      issuer: "Bloomberg",
-      date: "May 2025",
-      id: "srbcSSX6bmAxvXgaMj4mWADV",
-      url: "https://portal.bloombergforeducation.com/certificates/srbcSSX6bmAxvXgaMj4mWADV",
-    },
-    {
-      name: "Bloomberg Spreadsheet Analysis",
-      issuer: "Bloomberg",
-      date: "May 2025",
-      id: "rpu4HEP4p2bp9QYBm1cBRUFS",
-      url: "https://portal.bloombergforeducation.com/certificates/rpu4HEP4p2bp9QYBm1cBRUFS",
-    },
-    {
-      name: "Environmental Social Governance",
-      issuer: "Bloomberg",
-      date: "May 2025",
-      id: "qqqz3Ua7cBbc9o1CcrSs9ntN",
-      url: "https://portal.bloombergforeducation.com/certificates/qqqz3Ua7cBbc9o1CcrSs9ntN",
-    },
-    {
-      name: "Finance Accelerator",
-      issuer: "Morgan Stanley and UBS",
-      date: "Oct 2024",
-      id: "f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
-      url: "https://my.amplifyme.com/certificate/f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
-    },
-    {
-      name: "CFA level 1 Candidate",
+      id: "1",
+      name: "CFA Level 1 Passed",
       issuer: "CFA Institute",
-      date: "Oct 2025",
-      id: "95db74f4-a483-45a1-9a38-63f462bd0776",
+      date: "2025",
+      status: "completed",
+      credentialId: "95db74f4-a483-45a1-9a38-63f462bd0776",
       url: "https://credentials.cfainstitute.org/95db74f4-a483-45a1-9a38-63f462bd0776",
     },
     {
-      name: "GRE General Test",
-      issuer: "Educational Testing Service (ETS)",
+      id: "2",
+      name: "Bloomberg Market Concepts",
+      issuer: "Bloomberg",
+      date: "2025",
+      status: "completed",
+      credentialId: "srbcSSX6bmAxvXgaMj4mWADV",
+      url: "https://portal.bloombergforeducation.com/certificates/srbcSSX6bmAxvXgaMj4mWADV",
+    },
+    {
+      id: "3",
+      name: "Bloomberg Spreadsheet Analysis",
+      issuer: "Bloomberg",
+      date: "2025",
+      status: "completed",
+      credentialId: "rpu4HEP4p2bp9QYBm1cBRUFS",
+      url: "https://portal.bloombergforeducation.com/certificates/rpu4HEP4p2bp9QYBm1cBRUFS",
+    },
+    {
+      id: "4",
+      name: "Environmental Social Governance",
+      issuer: "Bloomberg",
+      date: "2025",
+      status: "completed",
+      credentialId: "qqqz3Ua7cBbc9o1CcrSs9ntN",
+      url: "https://portal.bloombergforeducation.com/certificates/qqqz3Ua7cBbc9o1CcrSs9ntN",
+    },
+    {
+      id: "5",
+      name: "Finance Accelerator",
+      issuer: "Morgan Stanley & UBS",
       date: "2024",
-      id: "c32589da-0d98-4f19-aaf2-d8a368b67298",
+      status: "completed",
+      credentialId: "f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
+      url: "https://my.amplifyme.com/certificate/f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
+    },
+    {
+      id: "6",
+      name: "GRE",
+      issuer: "GRE® General Test",
+      date: "2023",
+      status: "completed",
+      credentialId: "c32589da-0d98-4f19-aaf2-d8a368b67298",
       url: "https://achievements.gre.org/c32589da-0d98-4f19-aaf2-d8a368b67298",
     },
   ];
@@ -195,8 +208,8 @@ export function EducationSection() {
               <h3 className="text-2xl font-bold">Certifications</h3>
             </div>
             <div className="space-y-6">
-              {certifications.map((cert, i) => (
-                <Card key={i}>
+              {certifications.map((cert) => (
+                <Card key={cert.id}>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle>{cert.name}</CardTitle>
@@ -214,52 +227,52 @@ export function EducationSection() {
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline inline-flex items-center gap-1 group"
                     >
-                      <span>Credential ID: {cert.id}</span>
+                      <span>Credential ID: {cert.credentialId}</span>
                       <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </a>
                   </CardContent>
                 </Card>
               ))}
             </div>
+          </div>
 
-            <div className="mt-10">
-              <div className="flex items-center gap-2 mb-6">
-                <GraduationCap className="h-6 w-6" />
-                <h3 className="text-2xl font-bold">English Proficiency</h3>
-              </div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>IELTS</CardTitle>
-                  <CardDescription>
-                    Official English language test
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-xl font-bold">Overall</div>
-                      <div className="text-2xl font-bold text-primary">7.0</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold">Listening</div>
-                      <div className="text-2xl font-bold text-primary">7.5</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold">Reading</div>
-                      <div className="text-2xl font-bold text-primary">7.0</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold">Speaking</div>
-                      <div className="text-2xl font-bold text-primary">7.0</div>
-                    </div>
-                    <div className="text-center md:col-span-4">
-                      <div className="text-xl font-bold">Writing</div>
-                      <div className="text-2xl font-bold text-primary">6.5</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="mt-10">
+            <div className="flex items-center gap-2 mb-6">
+              <GraduationCap className="h-6 w-6" />
+              <h3 className="text-2xl font-bold">English Proficiency</h3>
             </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>IELTS</CardTitle>
+                <CardDescription>
+                  Official English language test
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-xl font-bold">Overall</div>
+                    <div className="text-2xl font-bold text-primary">7.0</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold">Listening</div>
+                    <div className="text-2xl font-bold text-primary">7.5</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold">Reading</div>
+                    <div className="text-2xl font-bold text-primary">7.0</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold">Speaking</div>
+                    <div className="text-2xl font-bold text-primary">7.0</div>
+                  </div>
+                  <div className="text-center md:col-span-4">
+                    <div className="text-xl font-bold">Writing</div>
+                    <div className="text-2xl font-bold text-primary">6.5</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

@@ -26,6 +26,7 @@ interface Certification {
   issueDate?: string;
   scheduledDate?: string;
   credentialId?: string;
+  url?: string;
 }
 
 export default function CertificationsSection() {
@@ -285,7 +286,7 @@ export default function CertificationsSection() {
                       <Calendar className="h-4 w-4" />
                       <span>
                         {certification.status === "scheduled"
-                          ? `Scheduled: ${certification.scheduledDate}`
+                          ? `Scheduled: ${certification.issueDate}`
                           : `Issued: ${certification.issueDate}`}
                       </span>
                     </div>
@@ -303,15 +304,19 @@ export default function CertificationsSection() {
                     )}
 
                     {/* Verification Link */}
-                    {certification.status === "completed" && (
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        <span>Verify Credential</span>
-                      </motion.button>
-                    )}
+                    {certification.status === "completed" &&
+                      certification.url && (
+                        <motion.a
+                          href={certification.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          whileHover={{ scale: 1.02 }}
+                          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors group"
+                        >
+                          <ExternalLink className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                          <span>Verify Credential</span>
+                        </motion.a>
+                      )}
                   </CardContent>
                 </Card>
               </motion.div>

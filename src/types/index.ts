@@ -40,9 +40,9 @@ export interface Certification {
   name: string;
   issuer: string;
   issueDate: string;
-  credentialId?: string;
   status: "completed" | "in-progress" | "scheduled";
-  scheduledDate?: string;
+  credentialId?: string;
+  url: string;
 }
 
 export interface Project {

@@ -100,6 +100,8 @@ export const certifications: Certification[] = [
     issuer: "CFA Institute",
     issueDate: "2025",
     status: "completed",
+    credentialId: "95db74f4-a483-45a1-9a38-63f462bd0776",
+    url: "https://credentials.cfainstitute.org/95db74f4-a483-45a1-9a38-63f462bd0776",
   },
   {
     id: "2",
@@ -107,6 +109,8 @@ export const certifications: Certification[] = [
     issuer: "Bloomberg",
     issueDate: "2025",
     status: "completed",
+    credentialId: "srbcSSX6bmAxvXgaMj4mWADV",
+    url: "https://portal.bloombergforeducation.com/certificates/srbcSSX6bmAxvXgaMj4mWADV",
   },
   {
     id: "3",
@@ -114,6 +118,8 @@ export const certifications: Certification[] = [
     issuer: "Bloomberg",
     issueDate: "2025",
     status: "completed",
+    credentialId: "rpu4HEP4p2bp9QYBm1cBRUFS",
+    url: "https://portal.bloombergforeducation.com/certificates/rpu4HEP4p2bp9QYBm1cBRUFS",
   },
   {
     id: "4",
@@ -121,6 +127,8 @@ export const certifications: Certification[] = [
     issuer: "Bloomberg",
     issueDate: "2025",
     status: "completed",
+    credentialId: "qqqz3Ua7cBbc9o1CcrSs9ntN",
+    url: "https://portal.bloombergforeducation.com/certificates/qqqz3Ua7cBbc9o1CcrSs9ntN",
   },
   {
     id: "5",
@@ -128,6 +136,8 @@ export const certifications: Certification[] = [
     issuer: "Morgan Stanley & UBS",
     issueDate: "2024",
     status: "completed",
+    credentialId: "f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
+    url: "https://my.amplifyme.com/certificate/f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
   },
   {
     id: "6",
@@ -135,6 +145,8 @@ export const certifications: Certification[] = [
     issuer: "GRE® General Test",
     issueDate: "2023",
     status: "completed",
+    credentialId: "c32589da-0d98-4f19-aaf2-d8a368b67298",
+    url: "https://achievements.gre.org/c32589da-0d98-4f19-aaf2-d8a368b67298",
   },
 ];
 

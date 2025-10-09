@@ -25,9 +25,10 @@ export function EducationSection() {
       institution: "Manchester Metropolitan",
       location: "Manchester, UK",
       date: "2024 – 2025",
-      description: "Expected graduation date: September 2025",
+      description: "Gaduation date: September 2025",
       icon: <GraduationCap className="h-5 w-5" />,
-      additional: "Rank 51+ in World, QS Universities",
+      additional:
+        "Grade: first Class (1:1) - Rank 51+ in World, QS Universities",
     },
     {
       degree: "B.Sc. in Biomedical Engineering (Bioelectric)",
