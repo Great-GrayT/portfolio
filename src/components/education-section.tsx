@@ -88,7 +88,7 @@ export function EducationSection() {
       url: "https://my.amplifyme.com/certificate/f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
     },
     {
-      name: "CFA level 1 Candidate",
+      name: "CFA level 1 Passed",
       issuer: "CFA Institute",
       date: "Oct 2025",
       id: "95db74f4-a483-45a1-9a38-63f462bd0776",
