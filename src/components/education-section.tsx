@@ -9,7 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { GraduationCap, Award, Calendar, School, BookOpen } from "lucide-react";
+import {
+  GraduationCap,
+  Award,
+  Calendar,
+  School,
+  BookOpen,
+  ExternalLink,
+} from "lucide-react";
 
 export function EducationSection() {
   const education = [
@@ -57,30 +64,42 @@ export function EducationSection() {
       issuer: "Bloomberg",
       date: "May 2025",
       id: "srbcSSX6bmAxvXgaMj4mWADV",
+      url: "https://portal.bloombergforeducation.com/certificates/srbcSSX6bmAxvXgaMj4mWADV",
     },
     {
       name: "Bloomberg Spreadsheet Analysis",
       issuer: "Bloomberg",
       date: "May 2025",
       id: "rpu4HEP4p2bp9QYBm1cBRUFS",
+      url: "https://portal.bloombergforeducation.com/certificates/rpu4HEP4p2bp9QYBm1cBRUFS",
     },
     {
       name: "Environmental Social Governance",
       issuer: "Bloomberg",
       date: "May 2025",
       id: "qqqz3Ua7cBbc9o1CcrSs9ntN",
+      url: "https://portal.bloombergforeducation.com/certificates/qqqz3Ua7cBbc9o1CcrSs9ntN",
     },
     {
       name: "Finance Accelerator",
       issuer: "Morgan Stanley and UBS",
       date: "Oct 2024",
       id: "f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
+      url: "https://my.amplifyme.com/certificate/f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
     },
     {
       name: "CFA level 1 Candidate",
       issuer: "CFA Institute",
-      date: "Aug 2025",
-      id: "Scheduled (due to take)",
+      date: "Oct 2025",
+      id: "95db74f4-a483-45a1-9a38-63f462bd0776",
+      url: "https://credentials.cfainstitute.org/95db74f4-a483-45a1-9a38-63f462bd0776",
+    },
+    {
+      name: "GRE General Test",
+      issuer: "Educational Testing Service (ETS)",
+      date: "2024",
+      id: "c32589da-0d98-4f19-aaf2-d8a368b67298",
+      url: "https://achievements.gre.org/c32589da-0d98-4f19-aaf2-d8a368b67298",
     },
   ];
 
@@ -189,9 +208,15 @@ export function EducationSection() {
                     <CardDescription>{cert.issuer}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Credential ID: {cert.id}
-                    </p>
+                    <a
+                      href={cert.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1 group"
+                    >
+                      <span>Credential ID: {cert.id}</span>
+                      <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </a>
                   </CardContent>
                 </Card>
               ))}

@@ -48,8 +48,8 @@ Certification:
   Issued: May 2025 Credential ID: qqqz3Ua7cBbc9o1CcrSs9ntN
 - Finance Accelerator: Morgan Stanley and UBS
   Issued: Oct 2024 Credential ID: f7d3907c-2efc-47b8-b358-1b8a60b27f6e
-- CFA level 1 Candidate: CFA Institute
-  Scheduled in: Aug 2025 (due to take)
+- CFA level 1 Passed: CFA Institute
+  Issued: Oct 2025 Credential ID: 95db74f4-a483-45a1-9a38-63f462bd0776
 
 Education:
 2024 – 2025: M.Sc. in Finance

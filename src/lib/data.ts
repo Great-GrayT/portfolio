@@ -15,7 +15,7 @@ export const personalData: PersonalData = {
   email: "rzafh79@gmail.com",
   linkedin: "https://linkedin.com/in/reza-fakhr-hosseini",
   website: "rezafh.com",
-  location: "13 Merrow Walk, Manchester, UK, M1 7JN",
+  location: "United Kingdom",
 };
 
 export const personalStatement = `Investment modeling, financial analysis, and valuation for 50+ companies across key sectors, contributing as an analyst for Iran's 39th largest mutual fund, which achieved a top 20 national ranking out of 519 funds during my tenure. Self-taught since 19, I was promoted to Senior Analyst by 23 at a leading financial institution. With a background in electronic engineering and a Master's in Finance from the UK, I bring a proven blend of technical, analytical, and strategic skills, committed to delivering value in an investment role.`;
