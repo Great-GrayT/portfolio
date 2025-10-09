@@ -96,10 +96,10 @@ export const education: Education[] = [
 export const certifications: Certification[] = [
   {
     id: "1",
-    name: "CFA Level 1 (Expected in early Oct)",
+    name: "CFA Level 1 Passed",
     issuer: "CFA Institute",
     issueDate: "2025",
-    status: "scheduled",
+    status: "completed",
   },
   {
     id: "2",

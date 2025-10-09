@@ -1,316 +1,267 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { education } from "@/lib/data";
-import { motion } from "framer-motion";
-import { useInView } from "framer-motion";
-import { useRef } from "react";
 import {
   GraduationCap,
-  Calendar,
-  MapPin,
   Award,
-  TrendingUp,
+  Calendar,
+  School,
+  BookOpen,
+  ExternalLink,
 } from "lucide-react";
 
-export default function EducationSection() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.2 });
+export function EducationSection() {
+  const education = [
+    {
+      degree: "M.Sc. in Finance",
+      institution: "Manchester Metropolitan",
+      location: "Manchester, UK",
+      date: "2024 – 2025",
+      description: "Expected graduation date: September 2025",
+      icon: <GraduationCap className="h-5 w-5" />,
+      additional: "Rank 51+ in World, QS Universities",
+    },
+    {
+      degree: "B.Sc. in Biomedical Engineering (Bioelectric)",
+      institution: "Amirkabir University of Technology",
+      location: "Tehran, Iran",
+      date: "2019 – 2023",
+      description:
+        "GPA: 3.45 (16.43 / 20), GPA of last 60 units: 3.71 (17.138 / 20)",
+      icon: <GraduationCap className="h-5 w-5" />,
+      additional: "Rank 1 BioElectrics Department in Iran, Ministry of Science",
+    },
+    {
+      degree: "Economy Minor Course",
+      institution: "Management Department, Amirkabir University of Technology",
+      location: "Tehran, Iran",
+      date: "2021 – 2022",
+      description: "GPA: 3.8 (17.82 / 20)",
+      icon: <BookOpen className="h-5 w-5" />,
+    },
+    {
+      degree: "High school in Mathematics",
+      institution: "Atomic Energy High School",
+      location: "Tehran, Iran",
+      date: "2016 – 2019",
+      description: "GPA: 19.52 / 20",
+      icon: <School className="h-5 w-5" />,
+      additional: "Rank 1 High School in Iran, Ministry of Science",
+    },
+  ];
 
-  const getEducationIcon = (degree: string) => {
-    if (degree.includes("M.Sc.") || degree.includes("Master")) {
-      return "🎓";
-    } else if (degree.includes("B.Sc.") || degree.includes("Bachelor")) {
-      return "📚";
-    } else if (degree.includes("Minor")) {
-      return "📖";
-    } else if (degree.includes("High School")) {
-      return "🏫";
-    }
-    return "🎓";
-  };
-
-  const getEducationPriority = (degree: string) => {
-    // Match your actual data structure
-    if (
-      degree.includes("Master of Science") ||
-      degree.includes("Master") ||
-      degree.includes("M.Sc.")
-    ) {
-      return 1; // Highest priority
-    }
-    if (
-      degree.includes("Bachelor of Science") ||
-      degree.includes("Bachelor") ||
-      degree.includes("B.Sc.")
-    ) {
-      return 2; // Second priority
-    }
-    if (degree.includes("Minor Course") || degree.includes("Minor")) {
-      return 3; // Third priority (supplementary education)
-    }
-    if (degree.includes("High School") || degree.includes("High school")) {
-      return 4; // Lowest priority
-    }
-    return 5; // Default fallback
-  };
-
-  // Your existing sorting logic remains the same:
-  const sortedEducation = [...education].sort(
-    (a, b) => getEducationPriority(a.degree) - getEducationPriority(b.degree)
-  );
+  const certifications = [
+    {
+      name: "Bloomberg Market Concepts",
+      issuer: "Bloomberg",
+      date: "May 2025",
+      id: "srbcSSX6bmAxvXgaMj4mWADV",
+      url: "https://portal.bloombergforeducation.com/certificates/srbcSSX6bmAxvXgaMj4mWADV",
+    },
+    {
+      name: "Bloomberg Spreadsheet Analysis",
+      issuer: "Bloomberg",
+      date: "May 2025",
+      id: "rpu4HEP4p2bp9QYBm1cBRUFS",
+      url: "https://portal.bloombergforeducation.com/certificates/rpu4HEP4p2bp9QYBm1cBRUFS",
+    },
+    {
+      name: "Environmental Social Governance",
+      issuer: "Bloomberg",
+      date: "May 2025",
+      id: "qqqz3Ua7cBbc9o1CcrSs9ntN",
+      url: "https://portal.bloombergforeducation.com/certificates/qqqz3Ua7cBbc9o1CcrSs9ntN",
+    },
+    {
+      name: "Finance Accelerator",
+      issuer: "Morgan Stanley and UBS",
+      date: "Oct 2024",
+      id: "f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
+      url: "https://my.amplifyme.com/certificate/f7d3907c-2efc-47b8-b358-1b8a60b27f6e",
+    },
+    {
+      name: "CFA level 1 Candidate",
+      issuer: "CFA Institute",
+      date: "Oct 2025",
+      id: "95db74f4-a483-45a1-9a38-63f462bd0776",
+      url: "https://credentials.cfainstitute.org/95db74f4-a483-45a1-9a38-63f462bd0776",
+    },
+    {
+      name: "GRE General Test",
+      issuer: "Educational Testing Service (ETS)",
+      date: "2024",
+      id: "c32589da-0d98-4f19-aaf2-d8a368b67298",
+      url: "https://achievements.gre.org/c32589da-0d98-4f19-aaf2-d8a368b67298",
+    },
+  ];
 
   return (
-    <section id="education" className="py-20 bg-background" ref={ref}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Education & Academic Background
+    <section id="education" className="py-16 md:py-24">
+      <div className="container px-4 md:px-6">
+        <div className="flex flex-col items-center justify-center text-center mb-12">
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+            Education & Certifications
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            A strong academic foundation combining engineering, economics, and
-            finance
-          </p>
-        </motion.div>
-
-        <div className="space-y-8">
-          {sortedEducation.map((edu, index) => (
-            <motion.div
-              key={edu.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
-            >
-              <Card className="border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="pb-4">
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="text-2xl">
-                          {getEducationIcon(edu.degree)}
-                        </div>
-                        <div>
-                          <CardTitle className="text-2xl font-bold text-foreground">
-                            {edu.degree} in {edu.field}
-                          </CardTitle>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-muted-foreground mt-2">
-                            <div className="flex items-center gap-2">
-                              <GraduationCap className="h-4 w-4" />
-                              <span className="font-semibold text-primary">
-                                {edu.institution}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4" />
-                              <span>{edu.location}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <Badge variant="outline" className="text-sm">
-                        {edu.startDate} - {edu.endDate}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* GPA Information */}
-                    {edu.gpa && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={
-                          isInView
-                            ? { opacity: 1, x: 0 }
-                            : { opacity: 0, x: -20 }
-                        }
-                        transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
-                      >
-                        <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-900/10">
-                          <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <TrendingUp className="h-4 w-4 text-blue-600" />
-                              <h4 className="font-semibold text-foreground">
-                                Academic Performance
-                              </h4>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-medium">GPA:</span>{" "}
-                              {edu.gpa}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    )}
-
-                    {/* Ranking Information */}
-                    {edu.ranking && (
-                      <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={
-                          isInView
-                            ? { opacity: 1, x: 0 }
-                            : { opacity: 0, x: 20 }
-                        }
-                        transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
-                      >
-                        <Card className="border-l-4 border-l-green-500 bg-green-50/50 dark:bg-green-900/10">
-                          <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Award className="h-4 w-4 text-green-600" />
-                              <h4 className="font-semibold text-foreground">
-                                Institution Ranking
-                              </h4>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {edu.ranking}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  {/* Graduation Date */}
-                  {edu.graduationDate && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={
-                        isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
-                      }
-                      transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
-                      className="text-center"
-                    >
-                      <Badge variant="secondary" className="text-sm px-4 py-2">
-                        Expected Graduation: {edu.graduationDate}
-                      </Badge>
-                    </motion.div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+          <Separator className="my-4 w-16 mx-auto" />
         </div>
 
-        {/* Education Timeline */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          className="mt-16"
-        >
-          <Card className="border-none shadow-lg bg-gradient-to-r from-primary/5 to-blue-600/5">
-            <CardContent className="p-8">
-              <h3 className="text-xl font-semibold text-foreground mb-8 text-center">
-                Educational Journey
-              </h3>
-
-              <div className="relative">
-                {/* Timeline Line */}
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-primary/20 h-full hidden lg:block"></div>
-
-                <div className="space-y-8">
-                  {sortedEducation.map((edu, index) => (
-                    <motion.div
-                      key={edu.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={
-                        isInView
-                          ? { opacity: 1, scale: 1 }
-                          : { opacity: 0, scale: 0.9 }
-                      }
-                      transition={{ duration: 0.4, delay: 1 + index * 0.1 }}
-                      className={`flex flex-col lg:flex-row items-center gap-6 ${
-                        index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
-                      }`}
-                    >
-                      {/* Timeline Dot */}
-                      <div className="hidden lg:flex w-4 h-4 bg-primary rounded-full border-4 border-background shadow-lg z-10"></div>
-
-                      {/* Content */}
-                      <div
-                        className={`flex-1 max-w-lg ${
-                          index % 2 === 0 ? "lg:text-right" : "lg:text-left"
-                        }`}
-                      >
-                        <div className="bg-background/80 backdrop-blur-sm rounded-lg p-4 shadow-md border">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-lg">
-                              {getEducationIcon(edu.degree)}
-                            </span>
-                            <h4 className="font-semibold text-foreground">
-                              {edu.degree}
-                            </h4>
-                          </div>
-                          <p className="text-sm text-primary font-medium">
-                            {edu.field}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {edu.institution}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {edu.startDate} - {edu.endDate}
-                          </p>
-                        </div>
+        <div className="grid gap-8 md:grid-cols-2 lg:gap-12 max-w-6xl mx-auto">
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <GraduationCap className="h-6 w-6" />
+              <h3 className="text-2xl font-bold">Educational Background</h3>
+            </div>
+            <div className="space-y-6">
+              {education.map((item, i) => (
+                <Card key={i}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <CardTitle className="flex items-center gap-2">
+                          {item.icon}
+                          {item.degree}
+                        </CardTitle>
+                        <CardDescription>{item.institution}</CardDescription>
+                        <CardDescription>{item.location}</CardDescription>
                       </div>
+                      <Badge variant="outline" className="font-medium">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        {item.date}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {item.description}
+                    </p>
+                    {item.additional && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        {item.additional}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-                      {/* Spacer for alternating layout */}
-                      <div className="hidden lg:block flex-1"></div>
-                    </motion.div>
-                  ))}
-                </div>
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-6">
+                <Award className="h-6 w-6" />
+                <h3 className="text-2xl font-bold">Teaching Experience</h3>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Academic Statistics */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.6, delay: 1.2 }}
-          className="mt-8"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-            <div>
-              <div className="text-3xl font-bold text-primary mb-2">
-                {education.length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Academic Qualifications
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">2</div>
-              <div className="text-sm text-muted-foreground">
-                Universities Attended
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-green-600 mb-2">8</div>
-              <div className="text-sm text-muted-foreground">
-                Years of Education
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600 mb-2">2</div>
-              <div className="text-sm text-muted-foreground">
-                Disciplines Studied
-              </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <CardTitle>Teaching assistant</CardTitle>
+                      <CardDescription>
+                        Department of Biomedical Engineering
+                      </CardDescription>
+                      <CardDescription>
+                        Amirkabir University of Technology, Tehran, Iran
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline">
+                      <Calendar className="mr-1 h-3 w-3" />
+                      2022 – 2023
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Course: Management and Entrepreneurship in Biomedical
+                    Engineering
+                    <br />
+                    Professor: Dr.Hamed Azarnoush
+                    <br />
+                    Duration: 2 semesters
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </motion.div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <Award className="h-6 w-6" />
+              <h3 className="text-2xl font-bold">Certifications</h3>
+            </div>
+            <div className="space-y-6">
+              {certifications.map((cert, i) => (
+                <Card key={i}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle>{cert.name}</CardTitle>
+                      <Badge variant="outline">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        {cert.date}
+                      </Badge>
+                    </div>
+                    <CardDescription>{cert.issuer}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <a
+                      href={cert.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1 group"
+                    >
+                      <span>Credential ID: {cert.id}</span>
+                      <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </a>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-6">
+                <GraduationCap className="h-6 w-6" />
+                <h3 className="text-2xl font-bold">English Proficiency</h3>
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>IELTS</CardTitle>
+                  <CardDescription>
+                    Official English language test
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <div className="text-xl font-bold">Overall</div>
+                      <div className="text-2xl font-bold text-primary">7.0</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xl font-bold">Listening</div>
+                      <div className="text-2xl font-bold text-primary">7.5</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xl font-bold">Reading</div>
+                      <div className="text-2xl font-bold text-primary">7.0</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xl font-bold">Speaking</div>
+                      <div className="text-2xl font-bold text-primary">7.0</div>
+                    </div>
+                    <div className="text-center md:col-span-4">
+                      <div className="text-xl font-bold">Writing</div>
+                      <div className="text-2xl font-bold text-primary">6.5</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
