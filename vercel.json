@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/projectx/check-jobs",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

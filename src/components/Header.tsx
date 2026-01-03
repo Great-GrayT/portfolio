@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Download } from "lucide-react";
 import { personalData } from "@/lib/data";
 import { ModeToggle } from "@/components/mode-toggle";
+import Link from "next/link";
 
 const navigation = [
   { name: "Projects", href: "#projects" },
@@ -14,6 +15,7 @@ const navigation = [
   { name: "Education", href: "#education" },
   { name: "Certifications", href: "#certifications" },
   { name: "Contact", href: "#contact" },
+  { name: "ProjectX", href: "/projectx", isExternal: true },
 ];
 
 export default function Header() {
@@ -35,6 +37,16 @@ export default function Header() {
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
       setIsMobileMenuOpen(false);
+    }
+  };
+
+  const handleNavigation = (item: { name: string; href: string; isExternal?: boolean }) => {
+    if (item.isExternal) {
+      // For external routes, don't scroll
+      setIsMobileMenuOpen(false);
+    } else {
+      // For anchor links, scroll to section
+      scrollToSection(item.href);
     }
   };
 
@@ -106,13 +118,23 @@ export default function Header() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
               {navigation.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => scrollToSection(item.href)}
-                  className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
-                >
-                  {item.name}
-                </button>
+                item.isExternal ? (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                  >
+                    {item.name}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.name}
+                    onClick={() => scrollToSection(item.href)}
+                    className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                  >
+                    {item.name}
+                  </button>
+                )
               ))}
             </nav>
 
@@ -153,13 +175,24 @@ export default function Header() {
             <div className="md:hidden">
               <div className="px-2 pt-2 pb-3 space-y-1 bg-background/95 backdrop-blur-md border border-border rounded-lg mb-4">
                 {navigation.map((item) => (
-                  <button
-                    key={item.name}
-                    onClick={() => scrollToSection(item.href)}
-                    className="block w-full text-left px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200 rounded-md"
-                  >
-                    {item.name}
-                  </button>
+                  item.isExternal ? (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => handleNavigation(item)}
+                      className="block w-full text-left px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200 rounded-md"
+                    >
+                      {item.name}
+                    </Link>
+                  ) : (
+                    <button
+                      key={item.name}
+                      onClick={() => scrollToSection(item.href)}
+                      className="block w-full text-left px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200 rounded-md"
+                    >
+                      {item.name}
+                    </button>
+                  )
                 ))}
                 <div className="pt-2">
                   <Button
