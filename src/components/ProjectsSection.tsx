@@ -450,6 +450,7 @@ export default function ProjectsSection() {
               {industries.map((industry) => (
                 <button
                   key={industry}
+                  type="button"
                   onClick={() => setSelectedIndustry(industry)}
                   className={`px-3 py-1 text-sm rounded-full transition-all ${
                     selectedIndustry === industry
@@ -526,16 +527,16 @@ export default function ProjectsSection() {
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                           <div className="flex space-x-3">
                             {project.socialLinks?.github && (
-                              <button className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
+                              <button type="button" aria-label="View on GitHub" className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
                                 <Github className="h-4 w-4 text-white" />
                               </button>
                             )}
                             {project.socialLinks?.linkedin && (
-                              <button className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
+                              <button type="button" aria-label="View on LinkedIn" className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
                                 <Linkedin className="h-4 w-4 text-white" />
                               </button>
                             )}
-                            <button className="p-2 bg-primary/80 rounded-full hover:bg-primary transition-colors">
+                            <button type="button" aria-label="View project" className="p-2 bg-primary/80 rounded-full hover:bg-primary transition-colors">
                               <ExternalLink className="h-4 w-4 text-white" />
                             </button>
                           </div>
@@ -612,6 +613,8 @@ export default function ProjectsSection() {
               className="flex justify-center items-center space-x-4"
             >
               <button
+                type="button"
+                aria-label="Previous page"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="p-2 rounded-full bg-background border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent transition-colors"
@@ -623,6 +626,8 @@ export default function ProjectsSection() {
                 {[...Array(totalPages)].map((_, i) => (
                   <button
                     key={i}
+                    type="button"
+                    aria-label={`Page ${i + 1}`}
                     onClick={() => setCurrentPage(i + 1)}
                     className={`w-10 h-10 rounded-full transition-all ${
                       currentPage === i + 1
@@ -636,6 +641,8 @@ export default function ProjectsSection() {
               </div>
 
               <button
+                type="button"
+                aria-label="Next page"
                 onClick={() =>
                   setCurrentPage(Math.min(totalPages, currentPage + 1))
                 }
@@ -699,6 +706,8 @@ export default function ProjectsSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-t-2xl" />
 
                 <button
+                  type="button"
+                  aria-label="Close"
                   onClick={closeProjectModal}
                   className="absolute top-4 right-4 p-2 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
                 >
@@ -819,6 +828,7 @@ export default function ProjectsSection() {
                     {selectedProject.files &&
                       selectedProject.files.length > 0 && (
                         <button
+                          type="button"
                           onClick={openFileSelector}
                           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                         >
@@ -910,6 +920,8 @@ export default function ProjectsSection() {
                   </p>
                 </div>
                 <button
+                  type="button"
+                  aria-label="Close"
                   onClick={closeFileSelector}
                   className="p-2 hover:bg-accent rounded-full transition-colors"
                 >
@@ -957,6 +969,7 @@ export default function ProjectsSection() {
                           </div>
                         </div>
                         <button
+                          type="button"
                           onClick={() => {
                             handleDownload(file, selectedProject.id);
                             closeFileSelector();

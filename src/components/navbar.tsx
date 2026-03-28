@@ -65,7 +65,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-4">
           <ModeToggle />
-          <button className="md:hidden">
+          <button type="button" aria-label="Open menu" className="md:hidden">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"

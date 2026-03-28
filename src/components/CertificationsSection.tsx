@@ -107,6 +107,10 @@ export default function CertificationsSection() {
       logoPath = "/images/certifications/gre-logo.png";
       fallbackIcon = "📝";
       fallbackBg = "bg-purple-600";
+    } else if (issuerLower.includes("cima")) {
+      logoPath = "/images/certifications/cima-logo.png";
+      fallbackIcon = "📈";
+      fallbackBg = "bg-teal-600";
     } else if (
       issuerLower.includes("university") ||
       issuerLower.includes("college")
@@ -168,6 +172,10 @@ export default function CertificationsSection() {
       logoPath = "/images/certifications/amplifymeofficial_logo.jpeg";
       fallbackIcon = "🏛️";
       fallbackBg = "bg-purple-600";
+    } else if (providerLower.includes("cima")) {
+      logoPath = "/images/certifications/cima-logo.png";
+      fallbackIcon = "📈";
+      fallbackBg = "bg-teal-600";
     }
 
     const logoId = `provider-${provider.replace(/\s+/g, "-").toLowerCase()}`;
@@ -390,7 +398,7 @@ export default function CertificationsSection() {
                 Certification Providers
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {/* Bloomberg */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -442,6 +450,29 @@ export default function CertificationsSection() {
                     Chartered Financial Analyst program
                   </p>
                   <Badge variant="secondary">Level 1 Candidate</Badge>
+                </motion.div>
+
+                {/* CIMA */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={
+                    isInView
+                      ? { opacity: 1, scale: 1 }
+                      : { opacity: 0, scale: 0.9 }
+                  }
+                  transition={{ duration: 0.4, delay: 1.4 }}
+                  className="text-center p-6 rounded-lg bg-teal-50 dark:bg-teal-900/10 border border-teal-200 dark:border-teal-800"
+                >
+                  <div className="flex justify-center mb-4">
+                    {getProviderLogo("CIMA")}
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-2">
+                    CIMA
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Chartered Institute of Management Accountants
+                  </p>
+                  <Badge variant="secondary">In Progress</Badge>
                 </motion.div>
 
                 {/* Investment Banks */}

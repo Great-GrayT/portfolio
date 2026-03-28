@@ -249,7 +249,8 @@
   }
 
   .portfolio-shadow-glow {
-    box-shadow: 0 0 0 1px var(--ring),
+    box-shadow:
+      0 0 0 1px var(--ring),
       0 10px 25px var(--portfolio-card-shadow-hover);
   }
 }
@@ -266,3 +267,37 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Rainbow diagonal text animation */
+@keyframes rainbow-diagonal {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 200%; }
+}
+
+.rainbow-text {
+  background: linear-gradient(
+    53deg,
+    #ff0000, #ff7700, #ffff00, #00ff00,
+    #0000ff, #8b00ff, #ff0000, #ff7700,
+    #ffff00, #00ff00, #0000ff, #8b00ff
+  );
+  -webkit-text-stroke: #000000 1px; /* Optional: Add a green stroke for better visibility */
+  background-size: 30% 30%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: rainbow-diagonal 5s linear infinite;
+}
+
+/* Hero badge positions — 5 badges evenly around the 320×320px profile circle */
+/* Circle center: (160, 160), badge orbit radius: 185px, 72° apart            */
+.hero-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.hero-badge-cfa       { top: -25px;  left: 160px; }
+.hero-badge-cima      { top: 103px;  left: 336px; }
+.hero-badge-bloomberg { top: 310px;  left: 269px; }
+.hero-badge-gre       { top: 310px;  left:  51px; }
+.hero-badge-msc       { top: 103px;  left: -16px; }

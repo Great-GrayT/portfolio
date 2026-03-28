@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Download } from "lucide-react";
 import { personalData } from "@/lib/data";
 import { ModeToggle } from "@/components/mode-toggle";
+import Link from "next/link";
 
 const navigation = [
   { name: "Projects", href: "#projects" },
@@ -89,6 +90,7 @@ export default function Header() {
             {/* Logo/Name */}
             <div className="flex-shrink-0">
               <button
+                type="button"
                 onClick={() => scrollToSection("#hero")}
                 className="text-xl font-bold text-foreground hover:text-primary transition-colors"
               >
@@ -104,16 +106,23 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex space-x-8 items-center">
               {navigation.map((item) => (
                 <button
                   key={item.name}
+                  type="button"
                   onClick={() => scrollToSection(item.href)}
                   className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
                 >
                   {item.name}
                 </button>
               ))}
+              <Link
+                href="/projectx"
+                className="rainbow-text font-bold text-sm hover:opacity-80 transition-opacity duration-200"
+              >
+                Project X
+              </Link>
             </nav>
 
             {/* Desktop Actions */}
@@ -134,9 +143,11 @@ export default function Header() {
             <div className="md:hidden flex items-center space-x-2">
               <ModeToggle />
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                 className="p-2"
               >
                 {isMobileMenuOpen ? (
@@ -155,12 +166,20 @@ export default function Header() {
                 {navigation.map((item) => (
                   <button
                     key={item.name}
+                    type="button"
                     onClick={() => scrollToSection(item.href)}
                     className="block w-full text-left px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200 rounded-md"
                   >
                     {item.name}
                   </button>
                 ))}
+                <Link
+                  href="/projectx"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full px-3 py-2 text-base font-bold rainbow-text hover:opacity-80 transition-opacity duration-200 rounded-md"
+                >
+                  Project X
+                </Link>
                 <div className="pt-2">
                   <Button
                     variant="outline"

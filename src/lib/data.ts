@@ -148,6 +148,13 @@ export const certifications: Certification[] = [
     credentialId: "c32589da-0d98-4f19-aaf2-d8a368b67298",
     url: "https://achievements.gre.org/c32589da-0d98-4f19-aaf2-d8a368b67298",
   },
+  {
+    id: "7",
+    name: "CIMA Professional Qualification",
+    issuer: "CIMA",
+    issueDate: "2026",
+    status: "in-progress",
+  },
 ];
 
 export const skillCategories: SkillCategory[] = [

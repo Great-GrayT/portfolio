@@ -42,7 +42,7 @@ export interface Certification {
   issueDate: string;
   status: "completed" | "in-progress" | "scheduled";
   credentialId?: string;
-  url: string;
+  url?: string;
 }
 
 export interface Project {

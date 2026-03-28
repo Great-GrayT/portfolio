@@ -245,124 +245,108 @@ export default function HeroSection() {
               <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/10 rounded-full blur-xl"></div>
               <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-blue-600/10 rounded-full blur-xl"></div>
 
-              {/* Floating Achievement Badges - Clean Logo + Text */}
-              <motion.div
-                animate={{ y: [-10, 10, -10] }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute -top-6 -right-6 flex flex-col items-center gap-2"
-              >
-                {!logoErrors.has("cfa") ? (
-                  <Image
-                    src="/images/certifications/cfa-logo.png"
-                    alt="CFA Institute Logo"
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 object-contain drop-shadow-lg"
-                    onError={() => handleLogoError("cfa")}
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-xl font-bold text-white">C</span>
-                  </div>
-                )}
-                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
-                  CFA Level 1
-                </span>
-              </motion.div>
+              {/* Floating Achievement Badges — evenly distributed around the circle */}
+              {/* Circle: 320×320px, center (160,160), badge radius 185px, 72° apart */}
 
-              <motion.div
-                animate={{ y: [10, -10, 10] }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-                className="absolute -bottom-6 -left-6 flex flex-col items-center gap-2"
-              >
-                {!logoErrors.has("bloomberg") ? (
-                  <Image
-                    src="/images/certifications/bloomberg-logo.jpg"
-                    alt="Bloomberg Logo"
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 object-contain drop-shadow-lg"
-                    onError={() => handleLogoError("bloomberg")}
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-xl font-bold text-white">B</span>
-                  </div>
-                )}
-                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
-                  Bloomberg Certified
-                </span>
-              </motion.div>
+              {/* CFA Level 1 — top (0°) */}
+              <div className="hero-badge hero-badge-cfa">
+                <motion.div
+                  animate={{ y: [-6, 6, -6] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  {!logoErrors.has("cfa") ? (
+                    <Image src="/images/certifications/cfa-logo.png" alt="CFA Institute Logo" width={48} height={48} className="w-12 h-12 object-contain drop-shadow-lg" onError={() => handleLogoError("cfa")} />
+                  ) : (
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-xl font-bold text-white">C</span>
+                    </div>
+                  )}
+                  <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm whitespace-nowrap">
+                    CFA Level 1
+                  </span>
+                </motion.div>
+              </div>
 
-              <motion.div
-                animate={{ x: [-5, 5, -5] }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 2,
-                }}
-                className="absolute top-1/3 -left-10 flex flex-col items-center gap-2 transform -translate-y-1/2"
-              >
-                {!logoErrors.has("msc") ? (
-                  <Image
-                    src="/images/certifications/msc-finance-logo.png"
-                    alt="University Logo"
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 object-contain drop-shadow-lg"
-                    onError={() => handleLogoError("msc")}
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-xl font-bold text-white">M</span>
-                  </div>
-                )}
-                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
-                  M.Sc. Finance
-                </span>
-              </motion.div>
+              {/* CIMA — top-right (72°) */}
+              <div className="hero-badge hero-badge-cima">
+                <motion.div
+                  animate={{ y: [-5, 5, -5], x: [3, -3, 3] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  {!logoErrors.has("cima") ? (
+                    <Image src="/images/certifications/cima-logo.png" alt="CIMA Logo" width={48} height={48} className="w-12 h-12 object-contain drop-shadow-lg" onError={() => handleLogoError("cima")} />
+                  ) : (
+                    <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-xl font-bold text-white">C</span>
+                    </div>
+                  )}
+                  <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm whitespace-nowrap">
+                    CIMA
+                  </span>
+                </motion.div>
+              </div>
 
-              <motion.div
-                animate={{
-                  rotate: [-2, 2, -2],
-                  scale: [1, 1.05, 1],
-                }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 3,
-                }}
-                className="absolute bottom-4 -right-12 flex flex-col items-center gap-2"
-              >
-                {!logoErrors.has("gre") ? (
-                  <Image
-                    src="/images/certifications/gre-logo.png"
-                    alt="GRE Logo"
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 object-contain drop-shadow-lg"
-                    onError={() => handleLogoError("gre")}
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-xl font-bold text-white">G</span>
-                  </div>
-                )}
-                <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm">
-                  GRE
-                </span>
-              </motion.div>
+              {/* Bloomberg — bottom-right (144°) */}
+              <div className="hero-badge hero-badge-bloomberg">
+                <motion.div
+                  animate={{ y: [6, -6, 6], x: [2, -2, 2] }}
+                  transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 1.4 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  {!logoErrors.has("bloomberg") ? (
+                    <Image src="/images/certifications/bloomberg-logo.jpg" alt="Bloomberg Logo" width={48} height={48} className="w-12 h-12 object-contain drop-shadow-lg" onError={() => handleLogoError("bloomberg")} />
+                  ) : (
+                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-xl font-bold text-white">B</span>
+                    </div>
+                  )}
+                  <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm whitespace-nowrap">
+                    Bloomberg
+                  </span>
+                </motion.div>
+              </div>
+
+              {/* GRE — bottom-left (216°) */}
+              <div className="hero-badge hero-badge-gre">
+                <motion.div
+                  animate={{ y: [6, -6, 6], x: [-3, 3, -3] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 2.1 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  {!logoErrors.has("gre") ? (
+                    <Image src="/images/certifications/gre-logo.png" alt="GRE Logo" width={48} height={48} className="w-12 h-12 object-contain drop-shadow-lg" onError={() => handleLogoError("gre")} />
+                  ) : (
+                    <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-xl font-bold text-white">G</span>
+                    </div>
+                  )}
+                  <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm whitespace-nowrap">
+                    GRE
+                  </span>
+                </motion.div>
+              </div>
+
+              {/* M.Sc. Finance — top-left (288°) */}
+              <div className="hero-badge hero-badge-msc">
+                <motion.div
+                  animate={{ y: [-5, 5, -5], x: [-3, 3, -3] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2.8 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  {!logoErrors.has("msc") ? (
+                    <Image src="/images/certifications/msc-finance-logo.png" alt="University Logo" width={48} height={48} className="w-12 h-12 object-contain drop-shadow-lg" onError={() => handleLogoError("msc")} />
+                  ) : (
+                    <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-xl font-bold text-white">M</span>
+                    </div>
+                  )}
+                  <span className="text-center text-xs font-medium text-foreground bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded-lg shadow-md backdrop-blur-sm whitespace-nowrap">
+                    M.Sc. Finance
+                  </span>
+                </motion.div>
+              </div>
             </div>
           </motion.div>
         </div>
