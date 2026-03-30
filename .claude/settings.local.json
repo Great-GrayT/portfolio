@@ -3,7 +3,10 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"require\\(''katex''\\); console.log\\(''OK''\\)\")",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }
