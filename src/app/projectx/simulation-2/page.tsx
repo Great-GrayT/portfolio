@@ -100,9 +100,9 @@ interface Metrics {
   avgPriceHistory: number[];
   deathsHistory: number[];
   accessibilityHistory: number[];
-  ageDist: number[];
-  incomeDist: number[];
-  accessDist: number[];
+  ageDist: { bin: string; count: number }[];
+  incomeDist: { bin: string; count: number }[];
+  accessDist: { bin: string; count: number }[];
 }
 
 // ─── Default config ───────────────────────────────────────────────────────────
@@ -742,17 +742,21 @@ function computeMetrics(
     return next.length > MAX_HIST ? next.slice(next.length - MAX_HIST) : next;
   };
 
-  const makeDist = (arr: number[], bins: number): number[] => {
-    if (arr.length === 0) return Array(bins).fill(0);
-    const lo = Math.min(...arr), hi = Math.max(...arr);
+  const makeDist = (arr: number[], bins: number, fmt: (lo: number, hi: number) => string): { bin: string; count: number }[] => {
+    const lo = arr.length ? Math.min(...arr) : 0;
+    const hi = arr.length ? Math.max(...arr) : 1;
     const range = hi - lo || 1;
-    const counts = Array<number>(bins).fill(0);
-    for (const v of arr) counts[Math.min(bins - 1, Math.floor(((v - lo) / range) * bins))]++;
-    return counts;
+    const step = range / bins;
+    const result = Array.from({ length: bins }, (_, i) => ({
+      bin: fmt(lo + i * step, lo + (i + 1) * step),
+      count: 0,
+    }));
+    for (const v of arr) result[Math.min(bins - 1, Math.floor(((v - lo) / range) * bins))].count++;
+    return result;
   };
-  const ageDist    = makeDist(ageArr, 10);
-  const incomeDist = makeDist(incomeArr, 10);
-  const accessDist = makeDist(accArr, 10);
+  const ageDist    = makeDist(ageArr,    10, (lo, hi) => `${Math.round(lo)}-${Math.round(hi)}`);
+  const incomeDist = makeDist(incomeArr, 10, (lo, hi) => `${Math.round(lo)}-${Math.round(hi)}`);
+  const accessDist = makeDist(accArr,    10, (lo, hi) => `${lo.toFixed(2)}-${hi.toFixed(2)}`);
 
   return {
     metrics: {
@@ -847,25 +851,34 @@ function ChartStrip({ data, lines, height = 70, label }: {
 
 // ─── Distribution bar chart ───────────────────────────────────────────────────
 function DistributionChart({ data, label, color }: {
-  data: number[];
+  data: { bin: string; count: number }[];
   label: string;
   color: string;
 }) {
-  const chartData = data.map((v, i) => ({ bin: i, count: v }));
   return (
     <div className="border border-[#181818] bg-[#0a0a0a]">
       <div className="text-[8px] text-[#444] uppercase tracking-widest px-2 pt-1.5 pb-0.5">{label}</div>
-      <ResponsiveContainer width="100%" height={80}>
-        <BarChart data={chartData} margin={{ top: 2, right: 10, left: 0, bottom: 0 }} barCategoryGap="10%">
+      <ResponsiveContainer width="100%" height={110}>
+        <BarChart data={data} margin={{ top: 4, right: 10, left: 0, bottom: 20 }} barCategoryGap="8%">
           <CartesianGrid strokeDasharray="2 2" stroke="#181818" vertical={false} />
-          <XAxis dataKey="bin" tick={false} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} width={30} />
+          <XAxis
+            dataKey="bin"
+            tick={{ fill: "#444", fontSize: 7 }}
+            tickLine={false}
+            axisLine={false}
+            angle={-35}
+            textAnchor="end"
+            interval={0}
+          />
+          <YAxis tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} width={32} />
           <Tooltip
+            formatter={(value: number) => [value, "agents"]}
+            labelFormatter={(lbl: string) => `bin: ${lbl}`}
             contentStyle={{ background: "#0a0a0a", border: "1px solid #222", fontSize: 9 }}
-            itemStyle={{ color: "#aaa" }}
+            itemStyle={{ color }}
             cursor={{ fill: "#ffffff08" }}
           />
-          <Bar dataKey="count" fill={color} isAnimationActive={false} />
+          <Bar dataKey="count" name="agents" fill={color} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -1367,13 +1380,15 @@ export default function Simulation2() {
               ]}
               height={120}
             />
-            <div className="flex flex-col gap-px mt-2">
-              <DistributionChart data={m.ageDist}    label="Age distribution (snapshot)"          color="#44bb77" />
-              <DistributionChart data={m.incomeDist} label="Income distribution (snapshot)"        color="#22cccc" />
-              <DistributionChart data={m.accessDist} label="Accessibility distribution (snapshot)" color="#5577cc" />
-            </div>
           </div>
         </div>
+      </div>
+
+      {/* Distribution charts — below the map */}
+      <div className="mt-3 grid grid-cols-3 gap-px bg-[#161616]">
+        <DistributionChart data={m.ageDist}    label="Age distribution (snapshot)"          color="#44bb77" />
+        <DistributionChart data={m.incomeDist} label="Income distribution (snapshot)"        color="#22cccc" />
+        <DistributionChart data={m.accessDist} label="Accessibility distribution (snapshot)" color="#5577cc" />
       </div>
 
       {/* Controls */}
