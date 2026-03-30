@@ -248,8 +248,8 @@ class MinHeap {
   }
   get empty() { return this.sz === 0; }
   private _swap(a: number, b: number) {
-    let t = this.d[a];  this.d[a]  = this.d[b];  this.d[b]  = t;
-    let u = this.id[a]; this.id[a] = this.id[b]; this.id[b] = u;
+    const t = this.d[a];  this.d[a]  = this.d[b];  this.d[b]  = t;
+    const u = this.id[a]; this.id[a] = this.id[b]; this.id[b] = u;
   }
   private _sink(i: number) {
     while (true) {
@@ -301,6 +301,7 @@ function dijkstraPath(N: number, grid: Uint8Array, start: number, end: number): 
 }
 
 function generateRoads(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   grid: Uint8Array, N: number, centers: [number, number][], roadDensity: number, _rng: () => number
 ): void {
   const anchors: number[] = centers.map(([r, c]) => r * N + c);
