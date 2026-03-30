@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, memo } from "react";
 import {
-  LineChart, Line, BarChart, Bar,
+  LineChart, Line, BarChart, Bar, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -100,9 +100,6 @@ interface Metrics {
   avgPriceHistory: number[];
   deathsHistory: number[];
   accessibilityHistory: number[];
-  ageDist: { bin: string; count: number }[];
-  incomeDist: { bin: string; count: number }[];
-  accessDist: { bin: string; count: number }[];
 }
 
 // ─── Default config ───────────────────────────────────────────────────────────
@@ -688,9 +685,6 @@ function computeMetrics(
   let sumAff = 0, wantMove = 0, sumDistCom = 0, sumDistRoad = 0;
   let maxIncome = 1, maxWealth = 1;
   const incomes: number[] = [];
-  const ageArr: number[] = [];
-  const incomeArr: number[] = [];
-  const accArr: number[] = [];
 
   for (const [idx, h] of households) {
     const acc = accessibility(idx, maps, N);
@@ -709,9 +703,6 @@ function computeMetrics(
     incomes.push(h.income);
     if (h.income > maxIncome) maxIncome = h.income;
     if (h.wealth > maxWealth) maxWealth = h.wealth;
-    ageArr.push(h.age);
-    incomeArr.push(h.income);
-    accArr.push(acc);
   }
 
   const n = Math.max(1, households.size);
@@ -742,22 +733,6 @@ function computeMetrics(
     return next.length > MAX_HIST ? next.slice(next.length - MAX_HIST) : next;
   };
 
-  const makeDist = (arr: number[], bins: number, fmt: (lo: number, hi: number) => string): { bin: string; count: number }[] => {
-    const lo = arr.length ? Math.min(...arr) : 0;
-    const hi = arr.length ? Math.max(...arr) : 1;
-    const range = hi - lo || 1;
-    const step = range / bins;
-    const result = Array.from({ length: bins }, (_, i) => ({
-      bin: fmt(lo + i * step, lo + (i + 1) * step),
-      count: 0,
-    }));
-    for (const v of arr) result[Math.min(bins - 1, Math.floor(((v - lo) / range) * bins))].count++;
-    return result;
-  };
-  const ageDist    = makeDist(ageArr,    10, (lo, hi) => `${Math.round(lo)}-${Math.round(hi)}`);
-  const incomeDist = makeDist(incomeArr, 10, (lo, hi) => `${Math.round(lo)}-${Math.round(hi)}`);
-  const accessDist = makeDist(accArr,    10, (lo, hi) => `${lo.toFixed(2)}-${hi.toFixed(2)}`);
-
   return {
     metrics: {
       step: prev.step + 1,
@@ -774,7 +749,6 @@ function computeMetrics(
       avgPriceHistory:        push(prev.avgPriceHistory,        avgLocalPrice),
       deathsHistory:          push(prev.deathsHistory,          deaths),
       accessibilityHistory:   push(prev.accessibilityHistory,   avgAccessibility * 100),
-      ageDist, incomeDist, accessDist,
     },
     ranges: { maxIncome, maxWealth },
   };
@@ -790,7 +764,6 @@ function emptyMetrics(): Metrics {
     avgIncomeHistory: [], avgWealthHistory: [], avgAgeHistory: [],
     pctMoveHistory: [], incomeInequalityHistory: [], spatialSegHistory: [],
     avgPriceHistory: [], deathsHistory: [], accessibilityHistory: [],
-    ageDist: [], incomeDist: [], accessDist: [],
   };
 }
 
@@ -849,8 +822,53 @@ function ChartStrip({ data, lines, height = 70, label }: {
   );
 }
 
+// ─── Slow-update visualisation data (distributions + scatter) ────────────────
+interface VizData {
+  ageDist:    { bin: string; count: number }[];
+  incomeDist: { bin: string; count: number }[];
+  accessDist: { bin: string; count: number }[];
+  scatterData: { age: number; income: number; acc: number; pressure: number; price: number }[];
+}
+function emptyVizData(): VizData {
+  return { ageDist: [], incomeDist: [], accessDist: [], scatterData: [] };
+}
+function computeVizData(
+  grid: Uint8Array, households: Map<number, Household>, N: number,
+  cfg: Config, maps: AccessMaps
+): VizData {
+  const ageArr: number[] = [], incomeArr: number[] = [], accArr: number[] = [];
+  const scatter: VizData["scatterData"] = [];
+  let i = 0;
+  for (const [idx, h] of households) {
+    const acc = accessibility(idx, maps, N);
+    const popDen = localPopDensity(idx, grid, N);
+    const price = computePrice(acc, popDen, cfg);
+    ageArr.push(h.age);
+    incomeArr.push(h.income);
+    accArr.push(acc);
+    if (i % 3 === 0 && scatter.length < 400)
+      scatter.push({ age: h.age, income: h.income, acc, pressure: h.movePressure, price });
+    i++;
+  }
+  const makeDist = (arr: number[], bins: number, fmt: (lo: number, hi: number) => string) => {
+    const lo = arr.length ? Math.min(...arr) : 0;
+    const hi = arr.length ? Math.max(...arr) : 1;
+    const range = hi - lo || 1;
+    const step = range / bins;
+    const result = Array.from({ length: bins }, (_, b) => ({ bin: fmt(lo + b * step, lo + (b + 1) * step), count: 0 }));
+    for (const v of arr) result[Math.min(bins - 1, Math.floor(((v - lo) / range) * bins))].count++;
+    return result;
+  };
+  return {
+    ageDist:    makeDist(ageArr,    20, (lo, hi) => `${Math.round(lo)}-${Math.round(hi)}`),
+    incomeDist: makeDist(incomeArr, 20, (lo, hi) => `${Math.round(lo)}-${Math.round(hi)}`),
+    accessDist: makeDist(accArr,    20, (lo, hi) => `${lo.toFixed(2)}-${hi.toFixed(2)}`),
+    scatterData: scatter,
+  };
+}
+
 // ─── Distribution bar chart ───────────────────────────────────────────────────
-function DistributionChart({ data, label, color }: {
+const DistributionChart = memo(function DistributionChart({ data, label, color }: {
   data: { bin: string; count: number }[];
   label: string;
   color: string;
@@ -858,17 +876,17 @@ function DistributionChart({ data, label, color }: {
   return (
     <div className="border border-[#181818] bg-[#0a0a0a]">
       <div className="text-[8px] text-[#444] uppercase tracking-widest px-2 pt-1.5 pb-0.5">{label}</div>
-      <ResponsiveContainer width="100%" height={110}>
-        <BarChart data={data} margin={{ top: 4, right: 10, left: 0, bottom: 20 }} barCategoryGap="8%">
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data} margin={{ top: 4, right: 10, left: 0, bottom: 22 }} barCategoryGap="4%">
           <CartesianGrid strokeDasharray="2 2" stroke="#181818" vertical={false} />
           <XAxis
             dataKey="bin"
             tick={{ fill: "#444", fontSize: 7 }}
             tickLine={false}
             axisLine={false}
-            angle={-35}
+            angle={-40}
             textAnchor="end"
-            interval={0}
+            interval={3}
           />
           <YAxis tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} width={32} />
           <Tooltip
@@ -883,12 +901,46 @@ function DistributionChart({ data, label, color }: {
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+// ─── Scatter plot ─────────────────────────────────────────────────────────────
+type AgentPoint = { age: number; income: number; acc: number; pressure: number; price: number };
+const ScatterPlot = memo(function ScatterPlot({ data, xKey, yKey, xLabel, yLabel, color }: {
+  data: AgentPoint[];
+  xKey: keyof AgentPoint;
+  yKey: keyof AgentPoint;
+  xLabel: string;
+  yLabel: string;
+  color: string;
+}) {
+  return (
+    <div className="border border-[#181818] bg-[#0a0a0a]">
+      <div className="text-[8px] text-[#444] uppercase tracking-widest px-2 pt-1.5 pb-0.5">
+        {xLabel} <span className="text-[#333]">vs</span> {yLabel}
+      </div>
+      <ResponsiveContainer width="100%" height={180}>
+        <ScatterChart margin={{ top: 6, right: 14, left: 0, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="2 2" stroke="#181818" />
+          <XAxis dataKey={xKey} type="number" name={xLabel} tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} label={{ value: xLabel, position: "insideBottom", fill: "#444", fontSize: 8, offset: 2 }} />
+          <YAxis dataKey={yKey} type="number" name={yLabel} tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} width={38} />
+          <Tooltip
+            cursor={{ stroke: "#333", strokeWidth: 1 }}
+            contentStyle={{ background: "#0a0a0a", border: "1px solid #222", fontSize: 9 }}
+            itemStyle={{ color: "#aaa" }}
+            formatter={(v: number) => v.toFixed(2)}
+          />
+          <Scatter data={data} fill={color} opacity={0.35} />
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
+  );
+});
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Simulation2() {
   const [cfg, setCfg] = useState<Config>(DEFAULT_CONFIG);
   const [metrics, setMetrics] = useState<Metrics>(emptyMetrics());
+  const [vizData, setVizData] = useState<VizData>(emptyVizData());
   const [running, setRunning] = useState(false);
   const [mathOpen, setMathOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -954,6 +1006,7 @@ export default function Simulation2() {
       metricsRef.current  = initM;
       rangesRef.current   = initR;
       setMetrics({ ...initM });
+      setVizData(computeVizData(grid, households, N, config, maps));
       setGenerating(false);
     }, 10);
   }, []);
@@ -1033,6 +1086,8 @@ export default function Simulation2() {
         metricsRef.current = newMetrics;
         rangesRef.current = ranges;
         setMetrics({ ...newMetrics });
+        if (newMetrics.step % 5 === 0)
+          setVizData(computeVizData(grid, households, N, config, maps));
 
         if (newMetrics.step >= config.maxSteps) {
           runningRef.current = false;
@@ -1090,6 +1145,7 @@ export default function Simulation2() {
       metricsRef.current = newMetrics;
       rangesRef.current = ranges;
       setMetrics({ ...newMetrics });
+      setVizData(computeVizData(grid, households, N, config, maps));
       renderCanvas();
     }
   };
@@ -1386,9 +1442,17 @@ export default function Simulation2() {
 
       {/* Distribution charts — below the map */}
       <div className="mt-3 grid grid-cols-3 gap-px bg-[#161616]">
-        <DistributionChart data={m.ageDist}    label="Age distribution (snapshot)"          color="#44bb77" />
-        <DistributionChart data={m.incomeDist} label="Income distribution (snapshot)"        color="#22cccc" />
-        <DistributionChart data={m.accessDist} label="Accessibility distribution (snapshot)" color="#5577cc" />
+        <DistributionChart data={vizData.ageDist}    label="Age distribution (snapshot)"          color="#44bb77" />
+        <DistributionChart data={vizData.incomeDist} label="Income distribution (snapshot)"        color="#22cccc" />
+        <DistributionChart data={vizData.accessDist} label="Accessibility distribution (snapshot)" color="#5577cc" />
+      </div>
+
+      {/* Scatter charts */}
+      <div className="mt-px grid grid-cols-2 gap-px bg-[#161616]">
+        <ScatterPlot data={vizData.scatterData} xKey="age"  yKey="income"   xLabel="Age"          yLabel="Income"   color="#22cccc" />
+        <ScatterPlot data={vizData.scatterData} xKey="acc"  yKey="pressure" xLabel="Accessibility" yLabel="Pressure" color="#ee6633" />
+        <ScatterPlot data={vizData.scatterData} xKey="age"  yKey="price"    xLabel="Age"          yLabel="Price"    color="#dd8800" />
+        <ScatterPlot data={vizData.scatterData} xKey="age"  yKey="pressure" xLabel="Age"          yLabel="Pressure" color="#aa88ee" />
       </div>
 
       {/* Controls */}
