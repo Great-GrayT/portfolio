@@ -6,7 +6,8 @@
       "Bash(npx tsc:*)",
       "Bash(npm install:*)",
       "Bash(node -e \"require\\(''katex''\\); console.log\\(''OK''\\)\")",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(pnpm install:*)"
     ]
   }
 }
