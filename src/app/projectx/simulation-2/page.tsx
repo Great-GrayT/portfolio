@@ -913,16 +913,39 @@ const ScatterPlot = memo(function ScatterPlot({ data, xKey, yKey, xLabel, yLabel
   yLabel: string;
   color: string;
 }) {
+  const xVals = data.map(d => d[xKey]);
+  const yVals = data.map(d => d[yKey]);
+  const xMin = xVals.length ? Math.min(...xVals) : 0;
+  const xMax = xVals.length ? Math.max(...xVals) : 1;
+  const yMin = yVals.length ? Math.min(...yVals) : 0;
+  const yMax = yVals.length ? Math.max(...yVals) : 1;
+  const xPad = (xMax - xMin) * 0.05 || 0.5;
+  const yPad = (yMax - yMin) * 0.05 || 0.5;
+  const xDomain: [number, number] = [+(xMin - xPad).toFixed(2), +(xMax + xPad).toFixed(2)];
+  const yDomain: [number, number] = [+(yMin - yPad).toFixed(2), +(yMax + yPad).toFixed(2)];
+  const fmt = (v: number) => Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(2);
   return (
     <div className="border border-[#181818] bg-[#0a0a0a]">
       <div className="text-[8px] text-[#444] uppercase tracking-widest px-2 pt-1.5 pb-0.5">
         {xLabel} <span className="text-[#333]">vs</span> {yLabel}
       </div>
       <ResponsiveContainer width="100%" height={180}>
-        <ScatterChart margin={{ top: 6, right: 14, left: 0, bottom: 4 }}>
+        <ScatterChart margin={{ top: 6, right: 14, left: 0, bottom: 18 }}>
           <CartesianGrid strokeDasharray="2 2" stroke="#181818" />
-          <XAxis dataKey={xKey} type="number" name={xLabel} tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} label={{ value: xLabel, position: "insideBottom", fill: "#444", fontSize: 8, offset: 2 }} />
-          <YAxis dataKey={yKey} type="number" name={yLabel} tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} width={38} />
+          <XAxis
+            dataKey={xKey} type="number" name={xLabel}
+            domain={xDomain} tickCount={5}
+            tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false}
+            tickFormatter={fmt}
+            label={{ value: xLabel, position: "insideBottom", fill: "#555", fontSize: 8, offset: -4 }}
+          />
+          <YAxis
+            dataKey={yKey} type="number" name={yLabel}
+            domain={yDomain} tickCount={5}
+            tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false}
+            tickFormatter={fmt}
+            width={42}
+          />
           <Tooltip
             cursor={{ stroke: "#333", strokeWidth: 1 }}
             contentStyle={{ background: "#0a0a0a", border: "1px solid #222", fontSize: 9 }}
