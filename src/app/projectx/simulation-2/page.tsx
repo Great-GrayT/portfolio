@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  LineChart, Line, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
 import Link from "next/link";
@@ -62,6 +63,8 @@ interface Config {
   maxSteps: number;
   seed: number;
   colorMode: "income" | "wealth" | "age" | "movePressure";
+  demandPriceEffect: number;
+  demandDecay: number;
 }
 
 interface AccessMaps {
@@ -97,6 +100,9 @@ interface Metrics {
   avgPriceHistory: number[];
   deathsHistory: number[];
   accessibilityHistory: number[];
+  ageDist: number[];
+  incomeDist: number[];
+  accessDist: number[];
 }
 
 // ─── Default config ───────────────────────────────────────────────────────────
@@ -128,6 +134,8 @@ const DEFAULT_CONFIG: Config = {
   maxSteps: 5000,
   seed: 42,
   colorMode: "income",
+  demandPriceEffect: 8,
+  demandDecay: 0.9,
 };
 
 // ─── Seeded RNG (mulberry32) ──────────────────────────────────────────────────
@@ -447,8 +455,8 @@ function localPopDensity(idx: number, grid: Uint8Array, N: number): number {
   return cnt / ((2 * DR + 1) ** 2);
 }
 
-function computePrice(acc: number, popDen: number, cfg: Config): number {
-  return Math.max(0, cfg.basePrice + cfg.accessibilityPriceEffect * acc + cfg.densityPriceEffect * popDen);
+function computePrice(acc: number, popDen: number, cfg: Config, demand = 0): number {
+  return Math.max(0, cfg.basePrice + cfg.accessibilityPriceEffect * acc + cfg.densityPriceEffect * popDen + cfg.demandPriceEffect * demand);
 }
 
 function computeSatisfaction(
@@ -505,9 +513,13 @@ function simulationTick(
   N: number,
   cfg: Config,
   maps: AccessMaps,
-  rng: () => number
+  rng: () => number,
+  demandMap: Float32Array
 ): number {
   let deaths = 0;
+
+  // Demand decay
+  for (let i = 0; i < demandMap.length; i++) demandMap[i] *= cfg.demandDecay;
 
   // Phase 1: Age + death/inheritance
   for (const [, h] of households) {
@@ -531,7 +543,7 @@ function simulationTick(
     h.income = computeIncome(h, acc, cfg, noise);
 
     const popDen = localPopDensity(idx, grid, N);
-    const price  = computePrice(acc, popDen, cfg);
+    const price  = computePrice(acc, popDen, cfg, demandMap[idx]);
 
     // Wealth: W(t+1) = W(t) + s_h·Y_h − P(x_h)
     // Consumption C = (1−s)·Y is implicitly the non-saved share and does NOT
@@ -586,6 +598,7 @@ function simulationTick(
       grid[bestTarget] = RESIDENTIAL;
       households.delete(fromIdx);
       households.set(bestTarget, h);
+      demandMap[bestTarget] = Math.min(1, demandMap[bestTarget] + 1);
       const ei = emptyArr.indexOf(bestTarget);
       if (ei !== -1) emptyArr[ei] = fromIdx; else emptyArr.push(fromIdx);
     }
@@ -675,6 +688,9 @@ function computeMetrics(
   let sumAff = 0, wantMove = 0, sumDistCom = 0, sumDistRoad = 0;
   let maxIncome = 1, maxWealth = 1;
   const incomes: number[] = [];
+  const ageArr: number[] = [];
+  const incomeArr: number[] = [];
+  const accArr: number[] = [];
 
   for (const [idx, h] of households) {
     const acc = accessibility(idx, maps, N);
@@ -693,6 +709,9 @@ function computeMetrics(
     incomes.push(h.income);
     if (h.income > maxIncome) maxIncome = h.income;
     if (h.wealth > maxWealth) maxWealth = h.wealth;
+    ageArr.push(h.age);
+    incomeArr.push(h.income);
+    accArr.push(acc);
   }
 
   const n = Math.max(1, households.size);
@@ -723,6 +742,18 @@ function computeMetrics(
     return next.length > MAX_HIST ? next.slice(next.length - MAX_HIST) : next;
   };
 
+  const makeDist = (arr: number[], bins: number): number[] => {
+    if (arr.length === 0) return Array(bins).fill(0);
+    const lo = Math.min(...arr), hi = Math.max(...arr);
+    const range = hi - lo || 1;
+    const counts = Array<number>(bins).fill(0);
+    for (const v of arr) counts[Math.min(bins - 1, Math.floor(((v - lo) / range) * bins))]++;
+    return counts;
+  };
+  const ageDist    = makeDist(ageArr, 10);
+  const incomeDist = makeDist(incomeArr, 10);
+  const accessDist = makeDist(accArr, 10);
+
   return {
     metrics: {
       step: prev.step + 1,
@@ -739,6 +770,7 @@ function computeMetrics(
       avgPriceHistory:        push(prev.avgPriceHistory,        avgLocalPrice),
       deathsHistory:          push(prev.deathsHistory,          deaths),
       accessibilityHistory:   push(prev.accessibilityHistory,   avgAccessibility * 100),
+      ageDist, incomeDist, accessDist,
     },
     ranges: { maxIncome, maxWealth },
   };
@@ -754,6 +786,7 @@ function emptyMetrics(): Metrics {
     avgIncomeHistory: [], avgWealthHistory: [], avgAgeHistory: [],
     pctMoveHistory: [], incomeInequalityHistory: [], spatialSegHistory: [],
     avgPriceHistory: [], deathsHistory: [], accessibilityHistory: [],
+    ageDist: [], incomeDist: [], accessDist: [],
   };
 }
 
@@ -812,6 +845,33 @@ function ChartStrip({ data, lines, height = 70, label }: {
   );
 }
 
+// ─── Distribution bar chart ───────────────────────────────────────────────────
+function DistributionChart({ data, label, color }: {
+  data: number[];
+  label: string;
+  color: string;
+}) {
+  const chartData = data.map((v, i) => ({ bin: i, count: v }));
+  return (
+    <div className="border border-[#181818] bg-[#0a0a0a]">
+      <div className="text-[8px] text-[#444] uppercase tracking-widest px-2 pt-1.5 pb-0.5">{label}</div>
+      <ResponsiveContainer width="100%" height={80}>
+        <BarChart data={chartData} margin={{ top: 2, right: 10, left: 0, bottom: 0 }} barCategoryGap="10%">
+          <CartesianGrid strokeDasharray="2 2" stroke="#181818" vertical={false} />
+          <XAxis dataKey="bin" tick={false} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: "#444", fontSize: 8 }} tickLine={false} axisLine={false} width={30} />
+          <Tooltip
+            contentStyle={{ background: "#0a0a0a", border: "1px solid #222", fontSize: 9 }}
+            itemStyle={{ color: "#aaa" }}
+            cursor={{ fill: "#ffffff08" }}
+          />
+          <Bar dataKey="count" fill={color} isAnimationActive={false} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Simulation2() {
   const [cfg, setCfg] = useState<Config>(DEFAULT_CONFIG);
@@ -834,6 +894,7 @@ export default function Simulation2() {
   const imageDataRef    = useRef<ImageData | null>(null);
   const displayColorsRef = useRef<Float32Array>(new Float32Array(0));
   const cfgRef          = useRef<Config>(DEFAULT_CONFIG);
+  const demandMapRef    = useRef<Float32Array>(new Float32Array(0));
 
   // Keep cfgRef in sync
   useEffect(() => { cfgRef.current = cfg; }, [cfg]);
@@ -869,6 +930,7 @@ export default function Simulation2() {
 
       const N = config.gridSize;
       displayColorsRef.current = new Float32Array(N * N * 3).fill(18);
+      demandMapRef.current = new Float32Array(N * N).fill(0);
 
       // Compute real initial metrics (step stays 0 — use emptyMetrics as prev)
       const { metrics: initM, ranges: initR } = computeMetrics(
@@ -951,7 +1013,7 @@ export default function Simulation2() {
       const N = config.gridSize;
 
       if (grid.length === N * N && maps) {
-        const deaths = simulationTick(grid, households, N, config, maps, rngRef.current);
+        const deaths = simulationTick(grid, households, N, config, maps, rngRef.current, demandMapRef.current);
         const { metrics: newMetrics, ranges } = computeMetrics(
           grid, households, N, config, maps, metricsRef.current, deaths
         );
@@ -1008,7 +1070,7 @@ export default function Simulation2() {
     const maps = accessMapsRef.current;
     const N = config.gridSize;
     if (grid.length === N * N && maps) {
-      const deaths = simulationTick(grid, households, N, config, maps, rngRef.current);
+      const deaths = simulationTick(grid, households, N, config, maps, rngRef.current, demandMapRef.current);
       const { metrics: newMetrics, ranges } = computeMetrics(
         grid, households, N, config, maps, metricsRef.current, deaths
       );
@@ -1104,76 +1166,96 @@ export default function Simulation2() {
           </button>
           {mathOpen && (
             <div className="px-4 pb-4 border-t border-[#1e1e1e] overflow-y-auto max-h-[70vh]">
-              {([
+              {((): { title: string; sym: string; num: string; note: string }[] => [
                 {
                   title: "Household state",
-                  tex: String.raw`S_h(t)=\bigl(x_h,\;M_h,\;a_h,\;D_h,\;Y_h,\;W_h,\;P_h^{\mathrm{move}}\bigr)`,
+                  sym: String.raw`S_h(t)=\bigl(x_h,\;M_h,\;a_h,\;D_h,\;Y_h,\;W_h,\;P_h^{\mathrm{move}}\bigr)`,
+                  num: "",
                   note: "Location, Money-IQ, age, death age, income, wealth, move pressure.",
                 },
                 {
                   title: "Accessibility",
-                  tex: String.raw`A(x)=w_1\,\mathrm{invNorm}(d_{\mathrm{com}})+w_2\,\mathrm{invNorm}(d_{\mathrm{road}})+w_3\,\rho_{\mathrm{com}}(x)`,
+                  sym: String.raw`A(x)=w_1\,\mathrm{invNorm}(d_{\mathrm{com}})+w_2\,\mathrm{invNorm}(d_{\mathrm{road}})+w_3\,\rho_{\mathrm{com}}(x)`,
+                  num: String.raw`=\;0.4\,\mathrm{invNorm}(d_{\mathrm{com}})+0.3\,\mathrm{invNorm}(d_{\mathrm{road}})+0.3\,\rho_{\mathrm{com}}(x)`,
                   note: "Terrain-aware weighted shortest-path distances. Barriers (rivers, mountains) are impassable.",
                 },
                 {
                   title: "Age–income profile",
-                  tex: String.raw`g(a)=\begin{cases}0.2 & a<18\\0.2+0.8\,\frac{a-18}{27} & 18\le a<45\\1.0 & 45\le a<60\\1.0-0.5\,\frac{a-60}{A_{\max}-60} & a\ge 60\end{cases}`,
+                  sym: String.raw`g(a)=\begin{cases}0.2 & a<18\\0.2+0.8\,\frac{a-18}{27} & 18\le a<45\\1.0 & 45\le a<60\\1.0-0.5\,\frac{a-60}{A_{\max}-60} & a\ge 60\end{cases}`,
+                  num: "",
                   note: "Hump-shaped lifecycle: low earnings when young, peak in working years, declining at retirement.",
                 },
                 {
                   title: "Income",
-                  tex: String.raw`Y_h=Y_0\bigl(1+\alpha_M M_h\bigr)\bigl(1+\alpha_A A(x_h)\bigr)g(a_h)+\varepsilon_h`,
+                  sym: String.raw`Y_h=Y_0(1+\alpha_M M_h)(1+\alpha_A A(x_h))g(a_h)+\varepsilon_h`,
+                  num: `=\\;${cfg.baseIncome}(1+${cfg.moneyIqEffect}\\,M_h)(1+${cfg.accessibilityIncomeEffect}\\,A(x_h))g(a_h)+\\varepsilon_h`,
                   note: "Depends on intrinsic Money-IQ, location accessibility, and lifecycle stage.",
                 },
                 {
                   title: "Local housing price",
-                  tex: String.raw`P(x)=P_0+\beta_A A(x)+\beta_D\,\rho_{\mathrm{pop}}(x)`,
-                  note: "Central, well-connected locations are more expensive when βA > 0.",
+                  sym: String.raw`P(x)=P_0+\beta_A A(x)+\beta_D\,\rho_{\mathrm{pop}}(x)+\beta_{\mathrm{dem}}\,d(x)`,
+                  num: `=\\;${cfg.basePrice}+${cfg.accessibilityPriceEffect}\\,A(x)+${cfg.densityPriceEffect}\\,\\rho_{\\mathrm{pop}}+${cfg.demandPriceEffect}\\,d(x)`,
+                  note: `Demand d(x) accumulates when movers target a cell; decays by ${cfg.demandDecay} per step. Hot neighbourhoods become more expensive.`,
                 },
                 {
                   title: "Wealth accumulation",
-                  tex: String.raw`W_h(t+1)=W_h(t)+s_h Y_h(t)-P(x_h)`,
-                  note: "Saving rate s_h retains a share of income; housing cost P is deducted each step.",
+                  sym: String.raw`W_h(t+1)=W_h(t)+s_h Y_h(t)-P(x_h)`,
+                  num: "",
+                  note: "Saving rate s_h ∈ [0.1, 0.4] retains a share of income; housing cost P is deducted each step.",
                 },
                 {
                   title: "Affordability stress",
-                  tex: String.raw`\mathrm{Aff}_h=\max\!\bigl(0,\;P(x_h)-\kappa Y_h\bigr)`,
+                  sym: String.raw`\mathrm{Aff}_h=\max\!\bigl(0,\;P(x_h)-\kappa Y_h\bigr)`,
+                  num: `=\\;\\max(0,\\;P(x_h)-${cfg.affordabilityKappa}\\,Y_h)`,
                   note: "Positive when housing cost exceeds the affordable fraction κ of income.",
                 },
                 {
                   title: "Move pressure (score)",
-                  tex: String.raw`P_h^{\mathrm{move}}=\gamma_A A(x_h)+\gamma_F\mathrm{Aff}_h+\gamma_Q\bigl(1-Q_h(x_h)\bigr)`,
+                  sym: String.raw`P_h^{\mathrm{move}}=\gamma_A A(x_h)+\gamma_F\mathrm{Aff}_h+\gamma_Q(1-Q_h(x_h))`,
+                  num: `=\\;${cfg.accessibilityToleranceEffect}\\,A(x_h)+${cfg.affordabilityEffect}\\,\\mathrm{Aff}_h+${cfg.socialDissatisfactionEffect}(1-Q_h(x_h))`,
                   note: "Relocation triggered when this score exceeds the threshold τ_move.",
                 },
                 {
                   title: "Relocation condition",
-                  tex: String.raw`P_h^{\mathrm{move}}>\tau_{\mathrm{move}}`,
+                  sym: String.raw`P_h^{\mathrm{move}}>\tau_{\mathrm{move}}`,
+                  num: `>\\;${cfg.baseMoveThreshold}`,
                   note: "τ_move is the 'Move threshold' slider; the score and threshold are kept separate.",
                 },
                 {
                   title: "Relocation utility",
-                  tex: String.raw`U_h(x)=\lambda_1 Q_h(x)+\lambda_2 A(x)-\lambda_3 P(x)-\lambda_4 T(x)`,
+                  sym: String.raw`U_h(x)=\lambda_1 Q_h(x)+\lambda_2 A(x)-\lambda_3 P(x)-\lambda_4 T(x)`,
+                  num: String.raw`=\;0.30\,Q_h(x)+0.30\,A(x)-0.20\,P(x)-0.20\,T(x)`,
                   note: "Candidate cell chosen to maximise social fit, accessibility, low price, and low travel burden.",
                 },
                 {
                   title: "Wealth inheritance",
-                  tex: String.raw`W_h^{\mathrm{new}}=\rho_W W_h^{\mathrm{old}}`,
+                  sym: String.raw`W_h^{\mathrm{new}}=\rho_W W_h^{\mathrm{old}}`,
+                  num: `=\\;${cfg.inheritanceRetention}\\,W_h^{\\mathrm{old}}`,
                   note: "Fraction ρW of wealth transfers to the new generation at household death.",
                 },
                 {
                   title: "Money-IQ inheritance",
-                  tex: String.raw`M_h^{\mathrm{new}}=\eta M_h^{\mathrm{old}}+(1-\eta)\,\varepsilon_h`,
+                  sym: String.raw`M_h^{\mathrm{new}}=\eta M_h^{\mathrm{old}}+(1-\eta)\,\varepsilon_h`,
+                  num: `=\\;${cfg.moneyIqPersistence}\\,M_h^{\\mathrm{old}}+${(1 - cfg.moneyIqPersistence).toFixed(2)}\\,\\varepsilon_h`,
                   note: "η controls intergenerational persistence; ε is a fresh random draw.",
                 },
-              ] as { title: string; tex: string; note: string }[]).map(({ title, tex, note }) => (
+              ])().map(({ title, sym, num, note }) => (
                 <div key={title} className="mt-3 first:mt-2">
                   <div className="text-[10px] font-medium text-[#888] uppercase tracking-wider mb-1">{title}</div>
                   <div
                     className="overflow-x-auto py-1 px-2 bg-[#0d0d0d] rounded border border-[#1e1e1e] text-[#ccc]"
                     dangerouslySetInnerHTML={{
-                      __html: katex.renderToString(tex, { throwOnError: false, displayMode: true }),
+                      __html: katex.renderToString(sym, { throwOnError: false, displayMode: true }),
                     }}
                   />
+                  {num && (
+                    <div
+                      className="overflow-x-auto py-1 px-2 mt-px bg-[#0a0a0a] rounded border border-[#1a1a1a] text-[#7a9a6a]"
+                      dangerouslySetInnerHTML={{
+                        __html: katex.renderToString(num, { throwOnError: false, displayMode: true }),
+                      }}
+                    />
+                  )}
                   <div className="text-[10px] text-[#555] mt-1 leading-relaxed">{note}</div>
                 </div>
               ))}
@@ -1285,6 +1367,11 @@ export default function Simulation2() {
               ]}
               height={120}
             />
+            <div className="flex flex-col gap-px mt-2">
+              <DistributionChart data={m.ageDist}    label="Age distribution (snapshot)"          color="#44bb77" />
+              <DistributionChart data={m.incomeDist} label="Income distribution (snapshot)"        color="#22cccc" />
+              <DistributionChart data={m.accessDist} label="Accessibility distribution (snapshot)" color="#5577cc" />
+            </div>
           </div>
         </div>
       </div>
@@ -1427,6 +1514,8 @@ export default function Simulation2() {
             <Slider label="Inheritance ρW" k="inheritanceRetention" min={0} max={1} step={0.05} decimals={2} />
             <Slider label="MoneyIQ persist. η" k="moneyIqPersistence" min={0} max={1} step={0.05} decimals={2} />
             <Slider label="Afford. kappa κ" k="affordabilityKappa" min={0.1} max={1.0} step={0.05} decimals={2} />
+            <Slider label="Demand price βDem" k="demandPriceEffect" min={0} max={30} step={1} />
+            <Slider label="Demand decay" k="demandDecay" min={0.5} max={1.0} step={0.01} decimals={2} />
           </div>
 
           {/* Col 4: Mobility & Lifecycle */}
