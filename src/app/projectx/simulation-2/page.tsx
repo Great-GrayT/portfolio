@@ -272,7 +272,7 @@ function dijkstraPath(N: number, grid: Uint8Array, start: number, end: number): 
   return path;
 }
 
-function generateRoads(grid: Uint8Array, N: number, centers: [number, number][], roadDensity: number, _rng: () => number): void {
+function generateRoads(grid: Uint8Array, N: number, centers: [number, number][], roadDensity: number): void {
   const anchors = centers.map(([r, c]) => r * N + c);
   const mid = Math.floor(N / 2);
   anchors.push(mid, (N - 1) * N + mid, mid * N, mid * N + N - 1);
@@ -315,7 +315,7 @@ function generateMap(cfg: Config, rng: () => number): { grid: Uint8Array; commer
       if (r >= 0 && r < N && c >= 0 && c < N && grid[r * N + c] === EMPTY) grid[r * N + c] = BLOCKED;
   }
   const commercialCenters = generateCommercial(grid, N, cfg.commercialCount, cfg.commercialCompactness, rng);
-  generateRoads(grid, N, commercialCenters, cfg.roadDensity, rng);
+  generateRoads(grid, N, commercialCenters, cfg.roadDensity);
   return { grid, commercialCenters };
 }
 
@@ -764,21 +764,19 @@ function simulationTick(
       const projLiquid = h.liquidWealth + releasedEquity;
       const mortPay = installmentPayment(candPrice, cfg.installmentN, cfg.installmentM);
 
-      let candPay: number, candProjLiquid: number, candDebt: number;
+      let candPay: number, candProjLiquid: number;
       if (projLiquid >= candPrice) {
         candPay = cfg.maintenanceRate * candPrice;
         candProjLiquid = projLiquid - candPrice + h.income - computeConsumption(h.income, candPay, commuteCost, cfg) - candPay - commuteCost;
-        candDebt = 0;
       } else if ((mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income) {
         candPay = mortPay;
         candProjLiquid = projLiquid + h.income - computeConsumption(h.income, candPay, commuteCost, cfg) - candPay - commuteCost;
-        candDebt = candPrice;
       } else {
         candPay = cfg.rentFactor * candPrice;
         // Basic affordability check: renter must cover essentials
         if ((candPay + commuteCost + cfg.basicCost) > cfg.affordabilityKappa * h.income + 0.5 * h.liquidWealth) continue;
         candProjLiquid = projLiquid + h.income - computeConsumption(h.income, candPay, commuteCost, cfg) - candPay - commuteCost;
-        candDebt = h.debtPrincipal;
+
       }
 
       // Temporarily mark as occupied for social fit
