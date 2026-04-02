@@ -47,17 +47,21 @@ function netWorthOf(h: Household): number {
 interface Config {
   gridSize: number; riverAmount: number; mountainAmount: number; blockedAmount: number;
   commercialCount: number; commercialCompactness: number; roadDensity: number; populationDensity: number;
+  // 1 step = 1 year. Each agent = one household. Age = household-head age.
   maxAge: number; avgDeathAge: number;
   baseIncome: number; moneyIqEffect: number; accessibilityIncomeEffect: number;
   basePrice: number; accessibilityPriceEffect: number; densityPriceEffect: number;
-  demandPriceEffect: number; demandDecay: number;
+  demandPriceEffect: number; demandDecay: number; // demandDecay: annual persistence (e.g. 0.97)
   inheritanceRetention: number; moneyIqPersistence: number;
-  // Financing
-  installmentN: number; installmentM: number;
-  rentFactor: number;       // rent per step as fraction of price
-  maintenanceRate: number;  // maintenance per step as fraction of home value
-  overdraftRate: number;    // consumer debt growth rate per step
-  consumptionPhi: number;   // marginal propensity to consume (φ)
+  // Annual financing rates
+  installmentN: number; installmentM: number; // years; annual mortgage rate
+  rentFactor: number;           // annual rent as fraction of property value
+  maintenanceRate: number;      // annual maintenance as fraction of home value
+  overdraftRate: number;        // annual unsecured debt interest rate
+  consumptionPhi: number;       // marginal propensity to consume (φ)
+  // Mortgage underwriting
+  minDownPaymentRatio: number;          // min down payment as fraction of price
+  maxDebtToIncomeForMortgage: number;   // max price-to-income ratio for mortgage access
   // Utility weights
   lambdaC: number; lambdaH: number; lambdaA: number; lambdaN: number;
   lambdaS: number; lambdaT: number; lambdaW: number; lambdaD: number;
@@ -83,7 +87,7 @@ interface AccessMaps {
 
 interface Metrics {
   step: number; householdCount: number;
-  avgIncome: number; avgLiquidWealth: number; avgNetWorth: number; avgDebtPrincipal: number;
+  avgIncome: number; avgLiquidWealth: number; avgNetWorth: number; avgHousingValue: number; avgDebtPrincipal: number;
   avgDebtToIncome: number; avgConsumption: number; avgHousingPayment: number;
   avgLocalPrice: number; avgAccessibility: number; avgDistCommercial: number; avgDistRoad: number;
   pctRenter: number; pctMortgage: number; pctOutright: number;
@@ -116,21 +120,27 @@ interface VizData {
   }[];
 }
 
-// ─── Default config ───────────────────────────────────────────────────────────
+// ─── Default config — balanced middle-income annual economy ───────────────────
+// One step = one year. All rates are annual. Each agent is a household.
 const DEFAULT_CONFIG: Config = {
   gridSize: 75, riverAmount: 2, mountainAmount: 2, blockedAmount: 1,
   commercialCount: 3, commercialCompactness: 0.7, roadDensity: 1.0, populationDensity: 0.4,
-  maxAge: 90, avgDeathAge: 72,
-  baseIncome: 50, moneyIqEffect: 0.5, accessibilityIncomeEffect: 0.3,
-  basePrice: 100, accessibilityPriceEffect: 80, densityPriceEffect: 20,
-  demandPriceEffect: 30, demandDecay: 0.92,
-  inheritanceRetention: 0.8, moneyIqPersistence: 0.5,
-  installmentN: 24, installmentM: 0.015,
-  rentFactor: 0.06, maintenanceRate: 0.004, overdraftRate: 0.03, consumptionPhi: 0.40,
-  lambdaC: 0.30, lambdaH: 0.08, lambdaA: 0.18, lambdaN: 0.12,
-  lambdaS: 0.08, lambdaT: 0.08, lambdaW: 0.18, lambdaD: 0.25, lambdaArr: 0.10, lambdaG: 0.12,
-  affordabilityKappa: 0.40, basicCost: 5, commuteCostFactor: 0.12,
-  utilityThreshold: 0.05, movingCostBase: 0.08, movingCostDist: 0.08,
+  maxAge: 95, avgDeathAge: 78,          // household-head lifespan (years)
+  baseIncome: 60, moneyIqEffect: 0.35, accessibilityIncomeEffect: 0.20,
+  basePrice: 180, accessibilityPriceEffect: 70, densityPriceEffect: 25,
+  demandPriceEffect: 20, demandDecay: 0.97, // annual demand persistence
+  inheritanceRetention: 0.55, moneyIqPersistence: 0.45,
+  installmentN: 30, installmentM: 0.04,  // 30-year mortgage at 4% annual rate
+  rentFactor: 0.05,       // annual rent = 5% of property value
+  maintenanceRate: 0.015, // annual maintenance = 1.5% of home value
+  overdraftRate: 0.12,    // annual unsecured debt rate = 12%
+  consumptionPhi: 0.55,
+  minDownPaymentRatio: 0.15,         // 15% minimum down payment
+  maxDebtToIncomeForMortgage: 5.0,   // price must be ≤ 5× annual income
+  lambdaC: 0.28, lambdaH: 0.10, lambdaA: 0.14, lambdaN: 0.10,
+  lambdaS: 0.06, lambdaT: 0.08, lambdaW: 0.14, lambdaD: 0.18, lambdaArr: 0.22, lambdaG: 0.08,
+  affordabilityKappa: 0.42, basicCost: 12, commuteCostFactor: 0.10,
+  utilityThreshold: 0.08, movingCostBase: 0.12, movingCostDist: 0.12,
   numGroups: 2, groupTolerance: 0.30,
   speed: 120, maxSteps: 5000, seed: 42,
   colorMode: "income",
@@ -404,10 +414,11 @@ function accessibility(idx: number, maps: AccessMaps, N: number): number {
 }
 
 function ageIncomeFactor(age: number, maxAge: number): number {
-  if (age < 18) return 0.2;
-  if (age < 45) return 0.2 + 0.8 * (age - 18) / 27;
+  // Household-head income profile: rises through 20s-30s, peaks 45-60, declines after
+  if (age < 22) return 0.40 + 0.15 * (age - 18) / 4;
+  if (age < 45) return 0.55 + 0.45 * (age - 22) / 23;
   if (age < 60) return 1.0;
-  return Math.max(0.1, 1.0 - 0.5 * (age - 60) / Math.max(1, maxAge - 60));
+  return Math.max(0.15, 1.0 - 0.65 * (age - 60) / Math.max(1, maxAge - 60));
 }
 
 function computeIncome(h: Household, acc: number, cfg: Config, noise: number): number {
@@ -449,26 +460,46 @@ function computeConsumption(income: number, pay: number, commuteCost: number, cf
   return cfg.basicCost + cfg.consumptionPhi * Math.max(0, surplus);
 }
 
+// Sample a realistic household-head age: concentrated in working-age adults
+function sampleHouseholdHeadAge(rng: () => number, maxAge: number): number {
+  const u = rng();
+  if (u < 0.18) return 18 + Math.floor(rng() * 12);                          // 18–29 (18%)
+  if (u < 0.50) return 30 + Math.floor(rng() * 15);                          // 30–44 (32%)
+  if (u < 0.76) return 45 + Math.floor(rng() * 15);                          // 45–59 (26%)
+  if (u < 0.93) return 60 + Math.floor(rng() * 15);                          // 60–74 (17%)
+  return Math.min(maxAge, 75 + Math.floor(rng() * 15));                       // 75+  (7%)
+}
+
 // Determine what tenure a household would take at a given price (simulating without side effects)
 type CandidateTenure = {
   tenure: TenureType; pay: number;
   newDebt: number; newDebtRate: number; newDebtPayment: number; newHV: number;
+  downPayment: number; // amount deducted from liquid wealth at purchase
 };
 
 function decideTenure(h: Household, price: number, commuteCost: number, cfg: Config): CandidateTenure {
-  const mortPay = installmentPayment(price, cfg.installmentN, cfg.installmentM);
   // Simulate selling old home first → released equity
   const releasedEquity = h.tenureType !== "renter" ? Math.max(0, h.housingOwnedValue - h.debtPrincipal) : 0;
   const projLiquid = h.liquidWealth + releasedEquity;
+  const minDown = cfg.minDownPaymentRatio * price; // minimum down payment required
 
   if (projLiquid >= price) {
-    return { tenure: "outright", pay: cfg.maintenanceRate * price, newDebt: 0, newDebtRate: 0, newDebtPayment: 0, newHV: price };
+    // Full cash purchase
+    return { tenure: "outright", pay: cfg.maintenanceRate * price, newDebt: 0, newDebtRate: 0, newDebtPayment: 0, newHV: price, downPayment: price };
   }
-  if ((mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income) {
-    return { tenure: "mortgage", pay: mortPay, newDebt: price, newDebtRate: cfg.installmentM, newDebtPayment: mortPay, newHV: price };
+  // Mortgage: requires down payment saved, DTI constraint, and payment affordability
+  if (
+    projLiquid >= minDown &&
+    h.income > 0 && price / h.income <= cfg.maxDebtToIncomeForMortgage
+  ) {
+    const mortgagePrincipal = price - minDown;
+    const mortPay = installmentPayment(mortgagePrincipal, cfg.installmentN, cfg.installmentM);
+    if ((mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income) {
+      return { tenure: "mortgage", pay: mortPay, newDebt: mortgagePrincipal, newDebtRate: cfg.installmentM, newDebtPayment: mortPay, newHV: price, downPayment: minDown };
+    }
   }
   // Renter: keep existing consumer debt
-  return { tenure: "renter", pay: cfg.rentFactor * price, newDebt: h.debtPrincipal, newDebtRate: h.debtRate, newDebtPayment: h.debtPayment, newHV: 0 };
+  return { tenure: "renter", pay: cfg.rentFactor * price, newDebt: h.debtPrincipal, newDebtRate: h.debtRate, newDebtPayment: h.debtPayment, newHV: 0, downPayment: 0 };
 }
 
 // Schelling group composition fit
@@ -582,9 +613,11 @@ function initHouseholds(grid: Uint8Array, N: number, cfg: Config, rng: () => num
     const idx = valid[k];
     grid[idx] = RESIDENTIAL;
     const miq = Math.max(0.01, Math.min(0.99, 0.5 + gaussRng(rng) * 0.2));
-    const age = Math.floor(rng() * cfg.maxAge);
-    const deathAge = Math.max(30, Math.round(cfg.avgDeathAge + gaussRng(rng) * 8));
-    const initLiquid = Math.max(0, gaussRng(rng) * 60 + 80);
+    // Household-head age: realistic working-age distribution, not uniform 0..maxAge
+    const age = sampleHouseholdHeadAge(rng, cfg.maxAge);
+    const deathAge = Math.max(age + 5, Math.round(cfg.avgDeathAge + gaussRng(rng) * 8));
+    // Initial liquid wealth scales with base income (approx 1–2 years of income)
+    const initLiquid = Math.max(0, cfg.baseIncome * (1.3 + gaussRng(rng) * 0.8));
     households.set(idx, {
       group: Math.floor(rng() * Math.max(1, cfg.numGroups)),
       moneyIq: miq, age, deathAge,
@@ -611,15 +644,15 @@ function assignTenureAtLocation(h: Household, idx: number, grid: Uint8Array, N: 
   const ct = decideTenure(h, price, commuteCost, cfg);
 
   if (ct.tenure === "outright" && h.tenureType === "renter") {
-    // Simulate: sell old (none), buy outright
-    h.liquidWealth -= price;
+    h.liquidWealth -= ct.downPayment; // downPayment == price for outright purchase
     h.housingOwnedValue = price;
     h.tenureType = "outright";
     h.debtPrincipal = 0; h.debtRate = 0; h.debtPayment = 0;
   } else if (ct.tenure === "mortgage" && h.tenureType === "renter") {
+    h.liquidWealth -= ct.downPayment; // deduct down payment from liquid wealth
     h.housingOwnedValue = price;
     h.tenureType = "mortgage";
-    h.debtPrincipal = price; h.debtRate = cfg.installmentM; h.debtPayment = ct.pay;
+    h.debtPrincipal = ct.newDebt; h.debtRate = cfg.installmentM; h.debtPayment = ct.pay;
   }
   // If renter stays renter, no change
 }
@@ -635,7 +668,8 @@ function simulationTick(
   // Phase 1: Demand decay
   for (let i = 0; i < demandMap.length; i++) demandMap[i] *= cfg.demandDecay;
 
-  // Phase 2: Age + death / inheritance
+  // Phase 2: Age + death / household replacement
+  // On dissolution, a new household-formation entrant (age 20–35) takes over.
   for (const [, h] of households) {
     h.age++;
     if (h.age >= h.deathAge) {
@@ -643,12 +677,14 @@ function simulationTick(
       h.group = Math.floor(rng() * Math.max(1, cfg.numGroups));
       h.moneyIq = Math.max(0.01, Math.min(0.99,
         cfg.moneyIqPersistence * h.moneyIq + (1 - cfg.moneyIqPersistence) * (0.5 + gaussRng(rng) * 0.2)));
-      // Inherited liquid wealth (fraction of net worth)
+      // Heir inherits fraction of net worth; sell housing and clear debt
       const nw = netWorthOf(h);
       h.liquidWealth = cfg.inheritanceRetention * Math.max(0, nw);
       h.housingOwnedValue = 0; h.debtPrincipal = 0; h.debtRate = 0; h.debtPayment = 0;
       h.tenureType = "renter"; h.arrears = 0; h.defaultCount = 0;
-      h.age = 0; h.deathAge = Math.max(30, Math.round(cfg.avgDeathAge + gaussRng(rng) * 8));
+      // New entrant age: household-formation band (20–35), not child age 0
+      h.age = 20 + Math.floor(rng() * 16);
+      h.deathAge = Math.max(h.age + 10, Math.round(cfg.avgDeathAge + gaussRng(rng) * 8));
       h.savingPropensity = 0.1 + rng() * 0.3;
     }
   }
@@ -695,14 +731,29 @@ function simulationTick(
       h.debtPrincipal *= (1 + cfg.overdraftRate);
     }
 
-    // Negative wealth → overdraft debt conversion
+    // Distress staging: shortfall → arrears → default (only after 3 consecutive bad years)
     if (h.liquidWealth < 0) {
+      // Stage 1: liquidity shortfall converts to overdraft debt
       h.debtPrincipal += Math.abs(h.liquidWealth);
       h.liquidWealth = 0;
       h.arrears++;
-      h.defaultCount++;
-      defaults++;
-    } else if (h.arrears > 0) {
+      // Stage 2: persistent distress (≥3 consecutive arrear years) triggers default
+      if (h.arrears >= 3) {
+        h.defaultCount++;
+        defaults++;
+        if (h.tenureType !== "renter") {
+          // Forced sale: release equity, convert to renter
+          const hv = h.housingOwnedValue;
+          const equity = Math.max(0, hv - h.debtPrincipal);
+          h.liquidWealth = equity * 0.5; // partial recovery after forced sale costs
+          h.debtPrincipal = Math.max(0, h.debtPrincipal - hv); // write down by housing value
+          h.housingOwnedValue = 0; h.debtRate = 0; h.debtPayment = 0;
+          h.tenureType = "renter";
+        }
+        h.arrears = 0; // reset after default event
+      }
+    } else {
+      // Recovery: reduce arrears by one year when budget is positive
       h.arrears = Math.max(0, h.arrears - 1);
     }
 
@@ -720,16 +771,22 @@ function simulationTick(
     const dCom = maps.distToCommercial[idx];
     const T = isFinite(dCom) ? Math.min(1, dCom / N) : 1;
     const commuteCost = cfg.commuteCostFactor * T * h.income;
+    const minDown = cfg.minDownPaymentRatio * price;
 
     if (h.liquidWealth >= price) {
       h.liquidWealth -= price;
       h.housingOwnedValue = price; h.tenureType = "outright";
       h.debtPrincipal = 0; h.debtRate = 0; h.debtPayment = 0;
-    } else {
-      const mortPay = installmentPayment(price, cfg.installmentN, cfg.installmentM);
-      if ((mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income && h.debtPrincipal === 0) {
+    } else if (
+      h.liquidWealth >= minDown && h.debtPrincipal === 0 &&
+      h.income > 0 && price / h.income <= cfg.maxDebtToIncomeForMortgage
+    ) {
+      const mortgagePrincipal = price - minDown;
+      const mortPay = installmentPayment(mortgagePrincipal, cfg.installmentN, cfg.installmentM);
+      if ((mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income) {
+        h.liquidWealth -= minDown;
         h.housingOwnedValue = price; h.tenureType = "mortgage";
-        h.debtPrincipal = price; h.debtRate = cfg.installmentM; h.debtPayment = mortPay;
+        h.debtPrincipal = mortgagePrincipal; h.debtRate = cfg.installmentM; h.debtPayment = mortPay;
       }
     }
   }
@@ -762,21 +819,26 @@ function simulationTick(
 
       // Simulate tenure at candidate (with equity from selling old home)
       const projLiquid = h.liquidWealth + releasedEquity;
-      const mortPay = installmentPayment(candPrice, cfg.installmentN, cfg.installmentM);
+      const candMinDown = cfg.minDownPaymentRatio * candPrice;
+      const candMortgagePrincipal = candPrice - candMinDown;
+      const mortPay = installmentPayment(candMortgagePrincipal, cfg.installmentN, cfg.installmentM);
 
       let candPay: number, candProjLiquid: number;
       if (projLiquid >= candPrice) {
         candPay = cfg.maintenanceRate * candPrice;
         candProjLiquid = projLiquid - candPrice + h.income - computeConsumption(h.income, candPay, commuteCost, cfg) - candPay - commuteCost;
-      } else if ((mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income) {
+      } else if (
+        projLiquid >= candMinDown &&
+        h.income > 0 && candPrice / h.income <= cfg.maxDebtToIncomeForMortgage &&
+        (mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income
+      ) {
         candPay = mortPay;
-        candProjLiquid = projLiquid + h.income - computeConsumption(h.income, candPay, commuteCost, cfg) - candPay - commuteCost;
+        candProjLiquid = (projLiquid - candMinDown) + h.income - computeConsumption(h.income, candPay, commuteCost, cfg) - candPay - commuteCost;
       } else {
         candPay = cfg.rentFactor * candPrice;
         // Basic affordability check: renter must cover essentials
         if ((candPay + commuteCost + cfg.basicCost) > cfg.affordabilityKappa * h.income + 0.5 * h.liquidWealth) continue;
         candProjLiquid = projLiquid + h.income - computeConsumption(h.income, candPay, commuteCost, cfg) - candPay - commuteCost;
-
       }
 
       // Temporarily mark as occupied for social fit
@@ -823,21 +885,28 @@ function simulationTick(
       h.housingOwnedValue = 0; h.debtPrincipal = 0; h.debtRate = 0; h.debtPayment = 0;
     }
 
-    // Establish tenure at new location
+    // Establish tenure at new location (with down payment requirement)
     const mAcc = accessibility(targetIdx, maps, N);
     const mPrice = computePrice(mAcc, localPopDensity(targetIdx, grid, N), cfg, demandMap[targetIdx]);
     const dCom = maps.distToCommercial[targetIdx];
     const T = isFinite(dCom) ? Math.min(1, dCom / N) : 1;
     const commuteCost = cfg.commuteCostFactor * T * h.income;
-    const mortPay = installmentPayment(mPrice, cfg.installmentN, cfg.installmentM);
+    const mMinDown = cfg.minDownPaymentRatio * mPrice;
+    const mMortgagePrincipal = mPrice - mMinDown;
+    const mortPay = installmentPayment(mMortgagePrincipal, cfg.installmentN, cfg.installmentM);
 
     if (h.liquidWealth >= mPrice) {
       h.liquidWealth -= mPrice;
       h.housingOwnedValue = mPrice; h.tenureType = "outright";
       h.debtPrincipal = 0; h.debtRate = 0; h.debtPayment = 0;
-    } else if ((mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income) {
+    } else if (
+      h.liquidWealth >= mMinDown &&
+      h.income > 0 && mPrice / h.income <= cfg.maxDebtToIncomeForMortgage &&
+      (mortPay + commuteCost + cfg.basicCost) <= cfg.affordabilityKappa * h.income
+    ) {
+      h.liquidWealth -= mMinDown;
       h.housingOwnedValue = mPrice; h.tenureType = "mortgage";
-      h.debtPrincipal = mPrice; h.debtRate = cfg.installmentM; h.debtPayment = mortPay;
+      h.debtPrincipal = mMortgagePrincipal; h.debtRate = cfg.installmentM; h.debtPayment = mortPay;
     } else {
       h.tenureType = "renter"; h.housingOwnedValue = 0;
     }
@@ -964,7 +1033,7 @@ function computeMetrics(
   cfg: Config, maps: AccessMaps, prev: Metrics,
   deaths: number, moves: number, defaults: number, demandMap: Float32Array
 ): { metrics: Metrics; ranges: { maxIncome: number; maxLiquid: number; maxNetWorth: number; maxDebt: number; minUtil: number; maxUtil: number } } {
-  let sumIncome = 0, sumLiquid = 0, sumNW = 0, sumDebt = 0, sumDTI = 0;
+  let sumIncome = 0, sumLiquid = 0, sumNW = 0, sumHV = 0, sumDebt = 0, sumDTI = 0;
   let sumConsumption = 0, sumPay = 0, sumPrice = 0, sumAcc = 0;
   let sumAge = 0, sumUtil = 0, sumArrears = 0;
   let cntRenter = 0, cntMortgage = 0, cntOutright = 0, cntAffordable = 0;
@@ -982,6 +1051,7 @@ function computeMetrics(
     const nw = netWorthOf(h);
 
     sumIncome += h.income; sumLiquid += h.liquidWealth; sumNW += nw;
+    sumHV += h.housingOwnedValue;
     sumDebt += h.debtPrincipal; sumDTI += h.income > 0 ? h.debtPrincipal / h.income : 0;
     sumConsumption += h.consumption; sumPay += pay; sumPrice += price; sumAcc += acc;
     sumAge += h.age; sumUtil += h.utility; sumArrears += h.arrears;
@@ -1012,6 +1082,7 @@ function computeMetrics(
     metrics: {
       step: prev.step + 1, householdCount: households.size,
       avgIncome: sumIncome / n, avgLiquidWealth: sumLiquid / n, avgNetWorth: sumNW / n,
+      avgHousingValue: sumHV / n,
       avgDebtPrincipal: sumDebt / n, avgDebtToIncome: sumDTI / n,
       avgConsumption: sumConsumption / n, avgHousingPayment: sumPay / n,
       avgLocalPrice: sumPrice / n, avgAccessibility: sumAcc / n,
@@ -1057,6 +1128,7 @@ function emptyMetrics(): Metrics {
   const h: number[] = [];
   return {
     step: 0, householdCount: 0, avgIncome: 0, avgLiquidWealth: 0, avgNetWorth: 0,
+    avgHousingValue: 0,
     avgDebtPrincipal: 0, avgDebtToIncome: 0, avgConsumption: 0, avgHousingPayment: 0,
     avgLocalPrice: 0, avgAccessibility: 0, avgDistCommercial: 0, avgDistRoad: 0,
     pctRenter: 0, pctMortgage: 0, pctOutright: 0,
@@ -1656,8 +1728,8 @@ export default function Simulation2() {
     {
       title: "Balance sheet",
       sym: String.raw`\text{NetWorth}_h = W_h^L + H_h^V - D_h`,
-      num: `\\text{NetWorth}=${m.avgLiquidWealth.toFixed(1)}+${m.avgNetWorth.toFixed(1)}-${m.avgDebtPrincipal.toFixed(1)}\\approx${m.avgNetWorth.toFixed(1)}`,
-      note: "W_L: liquid wealth, H_V: housing market value, D: outstanding debt (mortgage + consumer). Avg values shown.",
+      num: `\\text{NetWorth}=${m.avgLiquidWealth.toFixed(1)}+${m.avgHousingValue.toFixed(1)}-${m.avgDebtPrincipal.toFixed(1)}\\approx${m.avgNetWorth.toFixed(1)}`,
+      note: "W_L: liquid wealth, H_V: avg housing market value (owners only), D: outstanding debt (mortgage + consumer). Avg values shown.",
     },
     {
       title: "Budget constraint",
@@ -1675,7 +1747,7 @@ export default function Simulation2() {
       title: "Mortgage payment (level-payment amortization)",
       sym: String.raw`\text{Pay}_h = P \cdot \frac{m(1+m)^N}{(1+m)^N - 1}`,
       num: `=P\\cdot\\frac{${cfg.installmentM.toFixed(3)}(1+${cfg.installmentM.toFixed(3)})^{${cfg.installmentN}}}{(1+${cfg.installmentM.toFixed(3)})^{${cfg.installmentN}}-1}=${installmentPayment(100, cfg.installmentN, cfg.installmentM).toFixed(3)}\\text{ per 100 principal}`,
-      note: `N=${cfg.installmentN} steps, m=${cfg.installmentM.toFixed(3)}/step. Avg housing payment: ${m.avgHousingPayment.toFixed(2)}.`,
+      note: `N=${cfg.installmentN} years, m=${(cfg.installmentM*100).toFixed(1)}% annual rate. Payment per 100 principal: ${installmentPayment(100, cfg.installmentN, cfg.installmentM).toFixed(2)}. Avg housing payment: ${m.avgHousingPayment.toFixed(2)}.`,
     },
     {
       title: "Mortgage principal amortization",
@@ -1686,14 +1758,14 @@ export default function Simulation2() {
     {
       title: "Overdraft debt conversion",
       sym: String.raw`\text{if}\; W_h^L < 0 \;\Rightarrow\; D_h \mathrel{+}= |W_h^L|,\quad D_{t+1}=D_t(1+r_{\text{overdraft}})`,
-      num: `r_{\\text{overdraft}}=${cfg.overdraftRate.toFixed(3)}/\\text{step}`,
-      note: `Consumer debt grows at ${(cfg.overdraftRate * 100).toFixed(1)}% per step. Avg debt: ${m.avgDebtPrincipal.toFixed(1)}.`,
+      num: `r_{\\text{overdraft}}=${cfg.overdraftRate.toFixed(3)}/\\text{yr}`,
+      note: `Consumer debt grows at ${(cfg.overdraftRate * 100).toFixed(1)}% per year. Default occurs after 3 consecutive arrear years, triggering forced sale for owners. Avg debt: ${m.avgDebtPrincipal.toFixed(1)}.`,
     },
     {
       title: "Tenure decision",
       sym: String.raw`\text{tenure} = \begin{cases} \text{outright} & W_h^L \geq P \\ \text{mortgage} & \text{Pay} + T + C_\text{basic} \leq \kappa Y_h \\ \text{renter} & \text{otherwise} \end{cases}`,
       num: `\\kappa=${cfg.affordabilityKappa.toFixed(2)},\\;\\text{Renter}=${m.pctRenter.toFixed(1)}\\%,\\;\\text{Mortg}=${m.pctMortgage.toFixed(1)}\\%,\\;\\text{Outright}=${m.pctOutright.toFixed(1)}\\%`,
-      note: "Evaluated on every relocation AND when a renter's savings reach the purchase threshold.",
+      note: `Mortgage also requires: min down payment ${(cfg.minDownPaymentRatio*100).toFixed(0)}% of price AND price/income ≤ ${cfg.maxDebtToIncomeForMortgage}×. Evaluated on every relocation AND when a renter's savings reach the threshold.`,
     },
     {
       title: "Full utility function",
@@ -1972,10 +2044,53 @@ export default function Simulation2() {
           <span className="text-[9px] text-[#444] uppercase tracking-wider shrink-0">Presets:</span>
           {([
             { label: "Balanced", patch: {} },
-            { label: "High Inequality", patch: { moneyIqEffect: 1.5, accessibilityPriceEffect: 160, inheritanceRetention: 0.3, moneyIqPersistence: 0.8 } },
-            { label: "Debt Crisis", patch: { overdraftRate: 0.08, rentFactor: 0.12, basePrice: 200, accessibilityPriceEffect: 150, consumptionPhi: 0.7 } },
-            { label: "Homeowners", patch: { installmentM: 0.005, installmentN: 48, affordabilityKappa: 0.6, rentFactor: 0.15, lambdaW: 0.30 } },
-            { label: "Renters", patch: { basePrice: 300, installmentM: 0.04, rentFactor: 0.04, affordabilityKappa: 0.25 } },
+            {
+              label: "Underdeveloped",
+              patch: {
+                baseIncome: 28, moneyIqEffect: 0.40, accessibilityIncomeEffect: 0.35,
+                basePrice: 90, accessibilityPriceEffect: 35, densityPriceEffect: 15, demandPriceEffect: 10, demandDecay: 0.96,
+                installmentN: 15, installmentM: 0.10, rentFactor: 0.04, maintenanceRate: 0.010, overdraftRate: 0.18, consumptionPhi: 0.75,
+                affordabilityKappa: 0.38, basicCost: 8, commuteCostFactor: 0.16,
+                minDownPaymentRatio: 0.20, maxDebtToIncomeForMortgage: 3.0,
+                inheritanceRetention: 0.25, moneyIqPersistence: 0.30,
+                lambdaW: 0.10, lambdaD: 0.22, lambdaArr: 0.28, movingCostBase: 0.18, movingCostDist: 0.18,
+              },
+            },
+            {
+              label: "Recession",
+              patch: {
+                baseIncome: 48, basePrice: 170, demandPriceEffect: 10, demandDecay: 0.95,
+                installmentN: 25, installmentM: 0.08, rentFactor: 0.06, maintenanceRate: 0.015, overdraftRate: 0.20, consumptionPhi: 0.45,
+                affordabilityKappa: 0.35, basicCost: 14, commuteCostFactor: 0.12,
+                minDownPaymentRatio: 0.20, maxDebtToIncomeForMortgage: 3.5,
+                lambdaD: 0.24, lambdaArr: 0.32, lambdaW: 0.12, movingCostBase: 0.20, movingCostDist: 0.16,
+              },
+            },
+            {
+              label: "Wealthy",
+              patch: {
+                baseIncome: 95, moneyIqEffect: 0.30, accessibilityIncomeEffect: 0.15,
+                basePrice: 320, accessibilityPriceEffect: 110, densityPriceEffect: 30, demandPriceEffect: 25, demandDecay: 0.985,
+                installmentN: 30, installmentM: 0.035, rentFactor: 0.045, maintenanceRate: 0.018, overdraftRate: 0.08, consumptionPhi: 0.50,
+                affordabilityKappa: 0.45, basicCost: 22, commuteCostFactor: 0.08,
+                minDownPaymentRatio: 0.10, maxDebtToIncomeForMortgage: 6.0,
+                inheritanceRetention: 0.70, moneyIqPersistence: 0.55,
+                lambdaH: 0.14, lambdaN: 0.14, lambdaW: 0.16, lambdaD: 0.12, lambdaArr: 0.18,
+                movingCostBase: 0.10, movingCostDist: 0.10,
+              },
+            },
+            {
+              label: "Unequal Urban",
+              patch: {
+                baseIncome: 62, moneyIqEffect: 0.60, accessibilityIncomeEffect: 0.30,
+                basePrice: 220, accessibilityPriceEffect: 130, densityPriceEffect: 35, demandPriceEffect: 30, demandDecay: 0.98,
+                installmentN: 25, installmentM: 0.06, rentFactor: 0.055, maintenanceRate: 0.015, overdraftRate: 0.14, consumptionPhi: 0.55,
+                affordabilityKappa: 0.40, basicCost: 14, commuteCostFactor: 0.12,
+                minDownPaymentRatio: 0.15, maxDebtToIncomeForMortgage: 5.0,
+                inheritanceRetention: 0.75, moneyIqPersistence: 0.65,
+                lambdaW: 0.18, lambdaD: 0.18, lambdaArr: 0.24,
+              },
+            },
             { label: "Schelling 4G", patch: { numGroups: 4, groupTolerance: 0.40, lambdaG: 0.35 } },
             { label: "Barrier-Heavy", patch: { riverAmount: 4, mountainAmount: 4, blockedAmount: 3, roadDensity: 1.8, lambdaT: 0.25 } },
             { label: "Sticky", patch: { movingCostBase: 0.4, movingCostDist: 0.4, utilityThreshold: 0.2 } },
@@ -2005,41 +2120,43 @@ export default function Simulation2() {
 
           <div className="flex flex-col gap-1.5">
             <div className="text-[9px] text-[#444] uppercase tracking-wider mb-0.5 border-b border-[#1a1a1a] pb-0.5">Income & Prices</div>
-            <Slider label="Base income Y₀" k="baseIncome"                  min={10}  max={200} />
-            <Slider label="MoneyIQ αM"     k="moneyIqEffect"               min={-1}  max={2}   step={0.05} decimals={2} />
-            <Slider label="Access. inc. αA" k="accessibilityIncomeEffect"  min={-1}  max={1}   step={0.05} decimals={2} />
-            <Slider label="Base price P₀"  k="basePrice"                  min={10}  max={500} />
-            <Slider label="Access. price"  k="accessibilityPriceEffect"   min={0}   max={200} />
-            <Slider label="Density price"  k="densityPriceEffect"         min={0}   max={50} />
-            <Slider label="Demand price"   k="demandPriceEffect"          min={0}   max={80} />
-            <Slider label="Demand decay"   k="demandDecay"                min={0.5} max={1.0} step={0.01} decimals={2} />
+            <Slider label="Base income Y₀" k="baseIncome"                  min={15}  max={150} step={1} />
+            <Slider label="MoneyIQ αM"     k="moneyIqEffect"               min={0}   max={1.0} step={0.05} decimals={2} />
+            <Slider label="Access. inc. αA" k="accessibilityIncomeEffect"  min={0}   max={0.6} step={0.05} decimals={2} />
+            <Slider label="Base price P₀"  k="basePrice"                  min={50}  max={500} step={5} />
+            <Slider label="Access. price"  k="accessibilityPriceEffect"   min={0}   max={150} step={5} />
+            <Slider label="Density price"  k="densityPriceEffect"         min={0}   max={50}  step={1} />
+            <Slider label="Demand price"   k="demandPriceEffect"          min={0}   max={50}  step={1} />
+            <Slider label="Demand decay"   k="demandDecay"                min={0.94} max={0.995} step={0.005} decimals={3} />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <div className="text-[9px] text-[#444] uppercase tracking-wider mb-0.5 border-b border-[#1a1a1a] pb-0.5">Financing</div>
-            <Slider label="Mortgage N"     k="installmentN"    min={2}    max={60} />
-            <Slider label="Mortgage rate m" k="installmentM"  min={0}    max={0.10} step={0.002} decimals={3} />
-            <Slider label="Rent factor"    k="rentFactor"      min={0.02} max={0.20} step={0.01} decimals={2} />
-            <Slider label="Maintenance"    k="maintenanceRate" min={0.001} max={0.02} step={0.001} decimals={3} />
-            <Slider label="Overdraft rate" k="overdraftRate"   min={0}    max={0.10} step={0.005} decimals={3} />
-            <Slider label="MPC φ"          k="consumptionPhi"  min={0.1}  max={0.9} step={0.05} decimals={2} />
-            <Slider label="Afford. κ"      k="affordabilityKappa" min={0.1} max={1.0} step={0.05} decimals={2} />
-            <Slider label="Basic cost"     k="basicCost"       min={0}    max={20} />
-            <Slider label="Commute factor" k="commuteCostFactor" min={0}  max={0.5} step={0.01} decimals={2} />
+            <div className="text-[9px] text-[#444] uppercase tracking-wider mb-0.5 border-b border-[#1a1a1a] pb-0.5">Financing (annual)</div>
+            <Slider label="Mortgage yrs N"  k="installmentN"    min={5}    max={40} />
+            <Slider label="Mortgage rate m" k="installmentM"    min={0.01} max={0.15} step={0.005} decimals={3} />
+            <Slider label="Rent factor"     k="rentFactor"      min={0.02} max={0.10} step={0.005} decimals={3} />
+            <Slider label="Maintenance"     k="maintenanceRate" min={0.005} max={0.03} step={0.001} decimals={3} />
+            <Slider label="Overdraft rate"  k="overdraftRate"   min={0.02} max={0.30} step={0.01}  decimals={2} />
+            <Slider label="MPC φ"           k="consumptionPhi"  min={0.30} max={0.85} step={0.05} decimals={2} />
+            <Slider label="Afford. κ"       k="affordabilityKappa" min={0.20} max={0.55} step={0.01} decimals={2} />
+            <Slider label="Basic cost"      k="basicCost"       min={5}    max={35} />
+            <Slider label="Commute factor"  k="commuteCostFactor" min={0.02} max={0.20} step={0.01} decimals={2} />
+            <Slider label="Min down pmt"    k="minDownPaymentRatio" min={0.05} max={0.35} step={0.01} decimals={2} />
+            <Slider label="Max price/inc"   k="maxDebtToIncomeForMortgage" min={1.5} max={8.0} step={0.5} decimals={1} />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <div className="text-[9px] text-[#444] uppercase tracking-wider mb-0.5 border-b border-[#1a1a1a] pb-0.5">Utility Weights</div>
-            <Slider label="λC consumption"  k="lambdaC"   min={0} max={1}   step={0.05} decimals={2} />
-            <Slider label="λW liquid wealth" k="lambdaW"  min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λH housing svc"  k="lambdaH"  min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λA accessibility" k="lambdaA" min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λN nbhd quality" k="lambdaN"  min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λS social fit"   k="lambdaS"  min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λT travel"       k="lambdaT"  min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λD debt burden"  k="lambdaD"  min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λArr arrears"    k="lambdaArr" min={0} max={0.5} step={0.05} decimals={2} />
-            <Slider label="λG group pref."  k="lambdaG"  min={0} max={0.5} step={0.05} decimals={2} />
+            <Slider label="λC consumption"  k="lambdaC"   min={0} max={0.40} step={0.02} decimals={2} />
+            <Slider label="λW liquid wealth" k="lambdaW"  min={0} max={0.30} step={0.02} decimals={2} />
+            <Slider label="λH housing svc"  k="lambdaH"  min={0} max={0.20} step={0.02} decimals={2} />
+            <Slider label="λA accessibility" k="lambdaA" min={0} max={0.25} step={0.02} decimals={2} />
+            <Slider label="λN nbhd quality" k="lambdaN"  min={0} max={0.20} step={0.02} decimals={2} />
+            <Slider label="λS social fit"   k="lambdaS"  min={0} max={0.20} step={0.02} decimals={2} />
+            <Slider label="λT travel"       k="lambdaT"  min={0} max={0.20} step={0.02} decimals={2} />
+            <Slider label="λD debt burden"  k="lambdaD"  min={0} max={0.30} step={0.02} decimals={2} />
+            <Slider label="λArr arrears"    k="lambdaArr" min={0} max={0.40} step={0.02} decimals={2} />
+            <Slider label="λG group pref."  k="lambdaG"  min={0} max={0.20} step={0.02} decimals={2} />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -2058,13 +2175,13 @@ export default function Simulation2() {
 
           <div className="flex flex-col gap-1.5">
             <div className="text-[9px] text-[#444] uppercase tracking-wider mb-0.5 border-b border-[#1a1a1a] pb-0.5">Mobility & Sim</div>
-            <Slider label="Utility thresh. τ" k="utilityThreshold"  min={0}   max={0.5}  step={0.01} decimals={2} />
-            <Slider label="Move cost μ₀"    k="movingCostBase"     min={0}   max={1.0}  step={0.05} decimals={2} />
-            <Slider label="Move dist μ₁"    k="movingCostDist"     min={0}   max={1.0}  step={0.05} decimals={2} />
-            <Slider label="Max age"         k="maxAge"             min={60}  max={120} />
-            <Slider label="Avg death age"   k="avgDeathAge"        min={40}  max={90} />
-            <Slider label="Inherit. ρW"     k="inheritanceRetention" min={0}  max={1}   step={0.05} decimals={2} />
-            <Slider label="MoneyIQ η"       k="moneyIqPersistence" min={0}   max={1}   step={0.05} decimals={2} />
+            <Slider label="Utility thresh. τ" k="utilityThreshold"  min={0.01} max={0.20} step={0.01} decimals={2} />
+            <Slider label="Move cost μ₀"    k="movingCostBase"     min={0.02} max={0.30} step={0.02} decimals={2} />
+            <Slider label="Move dist μ₁"    k="movingCostDist"     min={0.02} max={0.30} step={0.02} decimals={2} />
+            <Slider label="Max age"         k="maxAge"             min={75}  max={105} />
+            <Slider label="Avg death age"   k="avgDeathAge"        min={60}  max={90} />
+            <Slider label="Inherit. ρW"     k="inheritanceRetention" min={0.10} max={0.90} step={0.05} decimals={2} />
+            <Slider label="MoneyIQ η"       k="moneyIqPersistence" min={0.10} max={0.80} step={0.05} decimals={2} />
             <Slider label="Speed ms/step"   k="speed"              min={30}  max={500} />
             <Slider label="Max steps"       k="maxSteps"           min={100} max={10000} step={100} />
             <Slider label="Seed"            k="seed"               min={0}   max={9999} />
